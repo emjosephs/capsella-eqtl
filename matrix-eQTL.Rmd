@@ -94,6 +94,56 @@ legend('bottomright', c('FDR < 0.75','FDR < 0.1'), col = c('gray','black'), pch=
 
 
 ##remove ones with >100 eQTLs
+genecounts = dplyr::count(locmerge, gene)
+names(genecounts) = c('gene','numbereQTLs')
+
+par(mfrow=c(1,1), mar=c(5,5,2,2))
+hist(genecounts$numbereQTLs, col="navy", border="navy", breaks=100, main = "eQTLs per gene", xlab ="")
+hist(genecounts$numbereQTLs, col="navy", border="navy", breaks=100, main = "eQTLs per gene", xlab ="", xlim = c(50,1000), ylim =c(0,80))
+weirdos = dplyr::filter(genecounts, numbereQTLs>29)
+dim(weirdos)
+keepsnps = dplyr::filter(genecounts, numbereQTLs < 30)
+
+finalset = dplyr::filter(locmerge, gene %in% keepsnps$gene, !is.na(chr))
+
 
 ## look at the hotspot on scaffold 8?
+dplyr::filter(meCovar$all$eqtls, snps=="scaffold_8:12634406")
+## it's one of the coexpression eQTLs!!
+
+```
+
+Cis vs trans effect sizes?
+```{r}
+### get the distances of eqtls from the gene
+
+finalset$qtldist = apply(finalset, 1, function(x){
+  qtldist = 1e8
+  if (x[8] == x[11]){ ##on the same chromosome
+  qtldist1 = abs(as.numeric(x[9])-as.numeric(x[12])) ##gene start - snpchr 
+  qtldist2 = abs(as.numeric(x[10])-as.numeric(x[12])) ## gene end - snp chr
+  qtldist = min(qtldist1, qtldist2)
+  }
+  return(qtldist)
+})
+
+hist(finalset$qtldist, xlim = c(0,1e4), col="navy", main = "distances on same chrom", breaks=100000, ylim = c(0,6000))
+
+ciseqtls = dplyr::filter(finalset, qtldist < 5000, FDR < 0.1)
+transeqtls = dplyr::filter(finalset, qtldist > 5000, FDR < 0.1)
+## plot of how many cis and trans eqtls there are at FDR = 0.1
+mybp= barplot(c(nrow(ciseqtls), nrow(transeqtls)), xaxt='n', col = "darkgray", border="white", ylim = c(0,5000), xlim = c(-0.5,3), yaxt="n")
+axis(1, at = mybp, labels = c('cis','trans'), cex.axis=2, tick = F, col = "white")
+axis(2, las=2, cex.axis=2)
+
+### Compare effect sizes of cis and trans eqtls.
+t.test(abs(ciseqtls$beta), abs(transeqtls$beta)) ## cis eqtls have smaller effects but not by that much
+
+par(mar=c(7,7,2,2))
+plot(jitter(c(rep(1, nrow(ciseqtls)), rep(2, nrow(transeqtls)))), abs(c(ciseqtls$beta, transeqtls$beta)), bty="n", xlim = c(0.5,2.5), xaxt="n", yaxt = "n", col = "gray", xlab = "", ylab = "")
+axis(2, las=2, cex.axis=2)
+mtext('abs(beta)',2, line=5, cex=2)
+axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
+points(c(1,2), c(mean(abs(ciseqtls$beta)), mean(abs(transeqtls$beta))), cex=3, pch=16)
+
 ```
