@@ -33,3 +33,76 @@ write.table(meExp, file = 'data/matrixeqtl-files/cbExp', row.names=F, quote=F, c
 
 
 
+
+
+```r
+load('data/matrixeqtl-files/matrixeqtl-batched.rda')
+plot(meCovar)
+```
+
+![](matrix-eQTL_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+
+```r
+geneloc = read.table('data/matrixeqtl-files/genelocation.matrixeqtl', header=T, stringsAsFactors = F)
+geneloc$gene = as.character(geneloc$geneid)
+
+## merge gene locations with eQTL results (looking at Tag sites only)
+locmerge = dplyr::left_join(meCovar$all$eqtls, geneloc, by = "gene")
+```
+
+```
+## Warning: Column `gene` joining factor and character vector, coercing into
+## character vector
+```
+
+```r
+locmerge$snpchr = sapply(locmerge$snps, function(x){strsplit(as.character(x),':')[[1]][1]})
+locmerge$snppos = sapply(locmerge$snps, function(x){strsplit(as.character(x),':')[[1]][2]})
+
+
+#get xlim for the plot
+myxlim = lapply(1:8, function(x){
+  mychr = dplyr::filter(locmerge, snpchr == paste('scaffold_',as.character(x),sep=""))
+  mymax = max(as.numeric(mychr$snppos))
+  mymin = min(as.numeric(mychr$snppos))
+  return(c(mymin, mymax))
+  })
+
+eqtlsforplot = dplyr::filter(locmerge, FDR < 0.1)
+
+
+#postscript("figures/eqtls-pcs.eps",height=9,width=9,paper="special",horizontal=FALSE,colormodel="cymk")
+par(mfrow=c(8,8), mar=c(0,0,0,0))
+par(mar=c(0,0,0,0))
+layout(matrix(c(1,2:9,1,10:17,1,18:25,1,26:33,1,34:41,1,42:49,1,50:57,1,58:65, rep(66,9)), 9, 9, byrow = TRUE))
+plot.new()
+text(0.5,0.5,"Gene location", srt=90, cex=2.5)
+for (i in 8:1){ ##gene locations
+  for (j in 1:8){  ##snp location
+  mygenechr = paste('scaffold_',as.character(i),sep="")
+  mysnpchr = paste('scaffold_',as.character(j),sep="")
+mychrom = dplyr::filter(eqtlsforplot, chr ==mygenechr & snpchr == mysnpchr)
+mysigfdr = dplyr::filter(mychrom, FDR<0.1)
+plot(mychrom$snppos,mychrom$s1, col = 'gray', xlab = "", ylab = "", yaxt="n", xaxt="n", cex=1.5, xlim = myxlim[[j]])
+#text(100000,100000,paste('gene location is',as.character(i)))
+points(mysigfdr$snppos, mysigfdr$s1, col = 'black', pch=16, cex=1.5)  
+if (j==1){mtext(i, side = 2, cex=2, las=2, line=1)} ##if at chrom 1 for snps
+if(i==1){mtext(j, side=1, cex=2, line=2)} ## if at chrom 1 for genes
+
+  }
+}
+plot.new()
+text(0.5,0.4, "SNP location", cex=2.5)
+legend('bottomright', c('FDR < 0.75','FDR < 0.1'), col = c('gray','black'), pch=c(1,16), cex=1.5, bty="n")
+```
+
+![](matrix-eQTL_files/figure-html/unnamed-chunk-3-2.png)<!-- -->
+
+```r
+#dev.off()
+
+
+##remove ones with >100 eQTLs
+
+## look at the hotspot on scaffold 8?
+```
