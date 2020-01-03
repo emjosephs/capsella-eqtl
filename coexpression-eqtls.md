@@ -186,6 +186,35 @@ myoverl = lapply(1:4, function(x){
   overl = dplyr::filter(allbyall, snps == myrs)
   return(overl)
 })
+# 
+##are any eqtls of nearby genes? Nope
+
+##2nd eQTL
+x = sighits[2,]
+nearby2 = dplyr::filter(modulelocs, V1 == paste('scaffold_',x$chr,sep=""), V4 > x[[3]]-5e4, V5 < x[[3]]+5e4)
+over2 = dplyr::filter(myoverl[[2]], gene %in% nearby2$pac)
+nrow(over2)
 ```
 
+```
+## [1] 0
+```
 
+```r
+##3rd eQTL
+x = sighits[3,]
+nearby3 = dplyr::filter(modulelocs, V1 == paste('scaffold_',x$chr,sep=""), V4 > x[[3]]-5e4, V5 < x[[3]]+5e4)
+overl3 = myoverl[[3]]
+overl3$pac = as.character(overl3$gene)
+over3 = dplyr::filter(overl3, pac %in% nearby3$pac)
+nrow(over3) ###CHECK GENE VS FACTOR ISSUES
+```
+
+```
+## [1] 0
+```
+
+1st eQTL is intergenic
+2nd eQTL is a 4fold site
+3rd eQTL is intergenic
+4th eQTL is in a CNC!

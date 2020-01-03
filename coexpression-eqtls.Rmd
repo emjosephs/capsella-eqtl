@@ -164,8 +164,8 @@ myoverl = lapply(1:4, function(x){
   overl = dplyr::filter(allbyall, snps == myrs)
   return(overl)
 })
-
-##are any eqtls of nearby genes?
+# 
+##are any eqtls of nearby genes? Nope
 
 ##2nd eQTL
 x = sighits[2,]
@@ -184,4 +184,18 @@ nrow(over3) ###CHECK GENE VS FACTOR ISSUES
 
 ```
 
+1st eQTL is intergenic
+2nd eQTL is a 4fold site
+3rd eQTL is intergenic
+4th eQTL is in a CNC!
 
+Make an output table
+```{r}
+mysites = c('intergenic','exon','intergenic','CNS')
+mymod = moduleIndex[sighits$module]
+
+outTable = data.frame(mod = mymod, loc = sighits$rs, af = sighits$af, p = sighits$p_lrt, fdr = sighits$fdr, sitetype = mysites, stringsAsFactors=F)
+
+
+
+```

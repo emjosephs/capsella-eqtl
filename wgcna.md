@@ -150,6 +150,22 @@ axis(1, at = test, las=2, labels = names(moduleCounts))
 ![](wgcna_files/figure-html/unnamed-chunk-4-2.png)<!-- -->
 
 ```r
+moduleCounts
+```
+
+```
+## 
+##         white    lightgreen    darkorange        grey60  midnightblue 
+##            69           160           214           230           352 
+##        salmon          cyan darkturquoise        purple        orange 
+##           447           547           677           683           926 
+##         green   lightyellow         black          blue         brown 
+##          1214          1413          1558          1848          2076 
+##     turquoise 
+##          6392
+```
+
+```r
 ##quantile normalize the eigenvalues
 qn <- function(x){qqnorm(x, plot.it=FALSE)$x}
 nEigens = data.frame(apply(MEs, 2,qn))
