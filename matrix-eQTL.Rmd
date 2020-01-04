@@ -64,7 +64,21 @@ myxlim = lapply(1:8, function(x){
   return(c(mymin, mymax))
   })
 
-eqtlsforplot = dplyr::filter(locmerge, FDR < 0.1)
+
+##remove ones with >100 eQTLs
+genecounts = dplyr::count(locmerge, gene)
+names(genecounts) = c('gene','numbereQTLs')
+
+par(mfrow=c(1,1), mar=c(5,5,2,2))
+hist(genecounts$numbereQTLs, col="navy", border="navy", breaks=100, main = "eQTLs per gene", xlab ="")
+hist(genecounts$numbereQTLs, col="navy", border="navy", breaks=100, main = "eQTLs per gene", xlab ="", xlim = c(50,1000), ylim =c(0,80))
+weirdos = dplyr::filter(genecounts, numbereQTLs>29)
+dim(weirdos)
+keepsnps = dplyr::filter(genecounts, numbereQTLs < 30)
+
+finalset = dplyr::filter(locmerge, gene %in% keepsnps$gene, !is.na(chr))
+
+eqtlsforplot = dplyr::filter(finalset, FDR < 0.1)
 
 
 #postscript("figures/eqtls-pcs.eps",height=9,width=9,paper="special",horizontal=FALSE,colormodel="cymk")
@@ -90,21 +104,7 @@ if(i==1){mtext(j, side=1, cex=2, line=2)} ## if at chrom 1 for genes
 plot.new()
 text(0.5,0.4, "SNP location", cex=2.5)
 legend('bottomright', c('FDR < 0.75','FDR < 0.1'), col = c('gray','black'), pch=c(1,16), cex=1.5, bty="n")
-#dev.off()
 
-
-##remove ones with >100 eQTLs
-genecounts = dplyr::count(locmerge, gene)
-names(genecounts) = c('gene','numbereQTLs')
-
-par(mfrow=c(1,1), mar=c(5,5,2,2))
-hist(genecounts$numbereQTLs, col="navy", border="navy", breaks=100, main = "eQTLs per gene", xlab ="")
-hist(genecounts$numbereQTLs, col="navy", border="navy", breaks=100, main = "eQTLs per gene", xlab ="", xlim = c(50,1000), ylim =c(0,80))
-weirdos = dplyr::filter(genecounts, numbereQTLs>29)
-dim(weirdos)
-keepsnps = dplyr::filter(genecounts, numbereQTLs < 30)
-
-finalset = dplyr::filter(locmerge, gene %in% keepsnps$gene, !is.na(chr))
 
 
 ## look at the hotspot on scaffold 8?
@@ -139,11 +139,78 @@ axis(2, las=2, cex.axis=2)
 ### Compare effect sizes of cis and trans eqtls.
 t.test(abs(ciseqtls$beta), abs(transeqtls$beta)) ## cis eqtls have smaller effects but not by that much
 
-par(mar=c(7,7,2,2))
+par(mar=c(7,7,2,2), mfrow=c(1,1))
 plot(jitter(c(rep(1, nrow(ciseqtls)), rep(2, nrow(transeqtls)))), abs(c(ciseqtls$beta, transeqtls$beta)), bty="n", xlim = c(0.5,2.5), xaxt="n", yaxt = "n", col = "gray", xlab = "", ylab = "")
 axis(2, las=2, cex.axis=2)
 mtext('abs(beta)',2, line=5, cex=2)
 axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
 points(c(1,2), c(mean(abs(ciseqtls$beta)), mean(abs(transeqtls$beta))), cex=3, pch=16)
+```
 
+Compare allele freqs of cis and trans
+```{r}
+finalset$rs = as.character(finalset$snps)
+mygemma = read.table('data/gemma-files/tb.16.assoc.txt', header=T, stringsAsFactors=F)##read in mafs from a gemma file
+finalaf = dplyr::left_join(finalset, mygemma[,c(2,5,6,7)], by = 'rs')
+
+ciseqtls = dplyr::filter(finalaf, qtldist < 5000, FDR < 0.1)
+transeqtls = dplyr::filter(finalaf, qtldist > 5000, FDR < 0.1)
+
+
+t.test(ciseqtls$af, transeqtls$af) ## cis eqtls have smaller effects but not by that much
+
+par(mar=c(7,7,2,2), mfrow=c(1,1))
+plot(jitter(c(rep(1, nrow(ciseqtls)), rep(2, nrow(transeqtls)))), c(ciseqtls$af, transeqtls$af), bty="n", xlim = c(0.5,2.5), xaxt="n", yaxt = "n", col = "gray", xlab = "", ylab = "")
+axis(2, las=2, cex.axis=2)
+mtext('MAF',2, line=5, cex=2)
+axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
+points(c(1,2), c(mean(ciseqtls$af, na.rm=T), mean(transeqtls$af, na.rm=T)), cex=3, pch=16)
+##driven by the hotspot? remove duplicates from the trans
+transunique = transeqtls[!duplicated(transeqtls$rs),]
+dim(transunique)
+cisunique = ciseqtls[!duplicated(ciseqtls$rs),]
+dim(cisunique)
+
+t.test(cisunique$af, transunique$af) ## cis eqtls have smaller effects but not by that much
+
+par(mar=c(7,7,2,2), mfrow=c(1,1))
+plot(jitter(c(rep(1, nrow(cisunique)), rep(2, nrow(transunique)))), c(cisunique$af, transunique$af), bty="n", xlim = c(0.5,2.5), xaxt="n", yaxt = "n", col = "gray", xlab = "", ylab = "")
+axis(2, las=2, cex.axis=2)
+mtext('MAF',2, line=5, cex=2)
+axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
+points(c(1,2), c(mean(cisunique$af, na.rm=T), mean(transunique$af, na.rm=T)), cex=3, pch=16)
+
+```
+
+Remake the plot of all eQTLs but add in the coexpression eqtls
+
+```{r}
+table1 = read.table('Table1', header=T, stringsAsFactors=F)
+table1$scaf = c(7,8,4,4)
+table1$pos = sapply(table1$loc, function(x){strsplit(x, split=":")[[1]][2]})
+
+#postscript("figures/eqtls-pcs.eps",height=9,width=9,paper="special",horizontal=FALSE,colormodel="cymk")
+par(mfrow=c(8,8), mar=c(0,0,0,0))
+par(mar=c(0,0,0,0))
+layout(matrix(c(1,2:9,1,10:17,1,18:25,1,26:33,1,34:41,1,42:49,1,50:57,1,58:65, rep(66,9)), 9, 9, byrow = TRUE))
+plot.new()
+text(0.5,0.5,"Gene location", srt=90, cex=2.5)
+for (i in 8:1){ ##gene locations
+  for (j in 1:8){  ##snp location
+  mygenechr = paste('scaffold_',as.character(i),sep="")
+  mysnpchr = paste('scaffold_',as.character(j),sep="")
+mychrom = dplyr::filter(eqtlsforplot, chr ==mygenechr & snpchr == mysnpchr)
+mycoexp = dplyr::filter(table1, scaf == j)
+plot(mychrom$snppos,mychrom$s1, col = 'darkgray', xlab = "", ylab = "", yaxt="n", xaxt="n", cex=1.5, xlim = myxlim[[j]])
+if(nrow(mycoexp)>0){abline(v = mycoexp$pos, col = "red")}
+
+
+if (j==1){mtext(i, side = 2, cex=2, las=2, line=1)} ##if at chrom 1 for snps
+if(i==1){mtext(j, side=1, cex=2, line=2)} ## if at chrom 1 for genes
+
+  }
+}
+plot.new()
+text(0.5,0.4, "SNP location", cex=2.5)
+legend('bottomright', c('FDR < 0.75','FDR < 0.1'), col = c('gray','black'), pch=c(1,16), cex=1.5, bty="n")
 ```

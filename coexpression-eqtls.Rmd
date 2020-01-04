@@ -196,6 +196,6 @@ mymod = moduleIndex[sighits$module]
 
 outTable = data.frame(mod = mymod, loc = sighits$rs, af = sighits$af, p = sighits$p_lrt, fdr = sighits$fdr, sitetype = mysites, stringsAsFactors=F)
 
-
+write.table(outTable, file = "Table1", row.names=F, quote=F, col.names=T)
 
 ```
