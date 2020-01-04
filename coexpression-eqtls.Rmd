@@ -149,7 +149,7 @@ plotsnp <- function(y){
   }
 
 par(mfrow=c(3,1), mar=c(4,4,2,1))
-sapply(1:3, plotsnp)
+test = sapply(1:3, plotsnp)
 ```
 
 
@@ -180,8 +180,7 @@ nearby3 = dplyr::filter(modulelocs, V1 == paste('scaffold_',x$chr,sep=""), V4 > 
 overl3 = myoverl[[3]]
 overl3$pac = as.character(overl3$gene)
 over3 = dplyr::filter(overl3, pac %in% nearby3$pac)
-nrow(over3) ###CHECK GENE VS FACTOR ISSUES
-
+nrow(over3)
 ```
 
 1st eQTL is intergenic
@@ -196,6 +195,59 @@ mymod = moduleIndex[sighits$module]
 
 outTable = data.frame(mod = mymod, loc = sighits$rs, af = sighits$af, p = sighits$p_lrt, fdr = sighits$fdr, sitetype = mysites, stringsAsFactors=F)
 
-write.table(outTable, file = "Table1", row.names=F, quote=F, col.names=T)
+#write.table(outTable, file = "Table1", row.names=F, quote=F, col.names=T)
+
+```
+
+The light yellow module is correlated with flowering time. Do these snps affect flowering time?
+
+Need to get genotypes at the eqtls first.
+```{bash, eval=F}
+head -n 1 146_tagsnps_transposed > coexp-eqtl-genos
+awk '$1 == "scaffold_7:17305936"' 146_tagsnps_transposed >> coexp-eqtl-genos
+awk '$1 == "scaffold_8:12634406"' 146_tagsnps_transposed >> coexp-eqtl-genos
+awk '$1 == "scaffold_4:12621988"' 146_tagsnps_transposed >> coexp-eqtl-genos
+awk '$1 == "scaffold_4:12623220"' 146_tagsnps_transposed >> coexp-eqtl-genos
+```
+
+```{r}
+phenos = read.table('data/phenotypes_NA.txt', header=T, stringsAsFactors = F)
+mygenos = read.table('data/matrixeqtl-files/coexp-eqtl-genos', header=T, stringsAsFactors=F)
+genodf = data.frame(t(mygenos[,-1]), stringsAsFactors = F)
+names(genodf) = mygenos$id
+genodf$xid = row.names(genodf)
+genodf$IID = sapply(genodf$xid, function(x){substr(x, 2, 100)})
+
+#replace -1s with NAs
+genodf[genodf == -1] <- NA
+
+#merge the phenotypes with the genotypes
+phenogeno = dplyr::inner_join(phenos, genodf, by='IID')
+
+##remove the one with missing time data -- 95
+phenogeno = dplyr::filter(phenogeno, IID != 95)
+
+
+par(mfrow=c(1,1), mar=c(5,5,3,3))
+##so eqtls 1 and 2 are for a module correlated with flowering time
+cor.test(phenogeno$'scaffold_7:17305936', phenogeno$bolt)
+cor.test(phenogeno$'scaffold_8:12634406', phenogeno$bolt)
+
+cor.test(phenogeno$'scaffold_4:12621988', phenogeno$bolt)
+cor.test(phenogeno$'scaffold_4:12623220', phenogeno$bolt)
+
+
+cor.test(phenogeno$'scaffold_7:17305936', phenogeno$N)
+cor.test(phenogeno$'scaffold_8:12634406', phenogeno$N)
+cor.test(phenogeno$'scaffold_4:12621988', phenogeno$N)
+cor.test(phenogeno$'scaffold_4:12623220', phenogeno$N)
+```
+
+
+What is the gene that eQTL 2 is in?
+
+```{r}
+x = sighits[2,]
+eqtlGene = dplyr::filter(modulelocs, V1 == paste('scaffold_',x$chr,sep=""), V4 < x[[3]], V5 > x[[3]])
 
 ```

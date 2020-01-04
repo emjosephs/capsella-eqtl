@@ -47,7 +47,10 @@ write.table(mymer2$V2, file="data/wgcna-files/mycb-names")
 ```{r, eval=F}
 library('WGCNA')
 library('flashClust')
-load('../data/wgcna-files/combatOutput.rda')
+load('data/wgcna-files/combatOutput.rda')
+
+powers = c(c(1:10), seq(from = 12, to=20, by=2))
+sft = pickSoftThreshold(t(mycb), powerVector = 12, verbose = 5)
 
 adjsigned=adjacency(t(mycb),selectCols = NULL, type="signed", power=12) #makes adjency matrix for correlations all the genes with all other genes
 TOMsigned = TOMsimilarity(adjsigned); ##makes topological overlap matrix
@@ -58,6 +61,7 @@ geneTree = flashClust(as.dist(dissTOMsigned), method = "average"); ##make hclust
 dynamicMods = cutreeDynamic(dendro = geneTree, distM = dissTOMsigned,
 deepSplit = 2, pamRespectsDendro = FALSE,
 minClusterSize = minModuleSize);
+
 sampleTree = hclust(dist(mycb), method = "average");
 dynamicColors = labels2colors(dynamicMods)
 MEList = moduleEigengenes(t(mycb), colors = dynamicColors)
@@ -121,8 +125,13 @@ rsync -ave ssh josep993@rsync.hpcc.msu.edu:trans-eQTL/data/wgcna-files/* data/wg
 ```{r}
 #how many modules are there?
 load('data/wgcna-files/PlantSigned-networkConstructionEM-stepByStep.RData')
-
+library('WGCNA')
 ncol(MEs) ##there are 16 modules
+
+plotDendroAndColors(geneTree, moduleColors, "Merged modules",
+                     dendroLabels = FALSE, hang = 0.03,
+                     addGuide = TRUE, guideHang = 0.05,
+                     main = "Gene dendrogram and module colors")
 
 
 ##histograms of the distributions

@@ -42,7 +42,10 @@ write.table(mymer2$V2, file="data/wgcna-files/mycb-names")
 ```r
 library('WGCNA')
 library('flashClust')
-load('../data/wgcna-files/combatOutput.rda')
+load('data/wgcna-files/combatOutput.rda')
+
+powers = c(c(1:10), seq(from = 12, to=20, by=2))
+sft = pickSoftThreshold(t(mycb), powerVector = 12, verbose = 5)
 
 adjsigned=adjacency(t(mycb),selectCols = NULL, type="signed", power=12) #makes adjency matrix for correlations all the genes with all other genes
 TOMsigned = TOMsimilarity(adjsigned); ##makes topological overlap matrix
@@ -53,6 +56,7 @@ geneTree = flashClust(as.dist(dissTOMsigned), method = "average"); ##make hclust
 dynamicMods = cutreeDynamic(dendro = geneTree, distM = dissTOMsigned,
 deepSplit = 2, pamRespectsDendro = FALSE,
 minClusterSize = minModuleSize);
+
 sampleTree = hclust(dist(mycb), method = "average");
 dynamicColors = labels2colors(dynamicMods)
 MEList = moduleEigengenes(t(mycb), colors = dynamicColors)
@@ -111,13 +115,59 @@ write.csv(conScaled_EM, file = "../data/wgcna-files/conScaled_EM.csv")
 ```r
 #how many modules are there?
 load('data/wgcna-files/PlantSigned-networkConstructionEM-stepByStep.RData')
+library('WGCNA')
+```
 
+```
+## Loading required package: dynamicTreeCut
+```
+
+```
+## Loading required package: fastcluster
+```
+
+```
+## 
+## Attaching package: 'fastcluster'
+```
+
+```
+## The following object is masked from 'package:stats':
+## 
+##     hclust
+```
+
+```
+## 
+```
+
+```
+## 
+## Attaching package: 'WGCNA'
+```
+
+```
+## The following object is masked from 'package:stats':
+## 
+##     cor
+```
+
+```r
 ncol(MEs) ##there are 16 modules
 ```
 
 ```
 ## [1] 16
 ```
+
+```r
+plotDendroAndColors(geneTree, moduleColors, "Merged modules",
+                     dendroLabels = FALSE, hang = 0.03,
+                     addGuide = TRUE, guideHang = 0.05,
+                     main = "Gene dendrogram and module colors")
+```
+
+![](wgcna_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
 
 ```r
 ##histograms of the distributions
@@ -132,7 +182,7 @@ for (i in seq(16)) {
   }
 ```
 
-![](wgcna_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+![](wgcna_files/figure-html/unnamed-chunk-4-2.png)<!-- -->
 
 ```r
 #dev.off()
@@ -147,7 +197,7 @@ axis(2, las=2, cex.axis=1.5)
 axis(1, at = test, las=2, labels = names(moduleCounts))
 ```
 
-![](wgcna_files/figure-html/unnamed-chunk-4-2.png)<!-- -->
+![](wgcna_files/figure-html/unnamed-chunk-4-3.png)<!-- -->
 
 ```r
 moduleCounts
@@ -177,12 +227,28 @@ tmer = dplyr::inner_join(nEigens, coltiming, by = c('id' = 'DNA_vcfname'))
 par(mfrow=c(4,4), mar = c(5,3,1,1))
 for (i in seq(16)) {
    plot(tmer$timeindex,tmer[,i], main="", ylab = "", xlab = "timing", bg = cols[i], pch = 21,yaxt="n", xaxt = "n", bty="n")
-  axis(1)
+  myl = lm(tmer[,i] ~ tmer$timeindex)
+    if(summary(myl)$coefficients[2,4]<0.05/16){abline(myl)}
+    axis(1)
   axis(2)
+  
   }
 ```
 
-![](wgcna_files/figure-html/unnamed-chunk-4-3.png)<!-- -->
+![](wgcna_files/figure-html/unnamed-chunk-4-4.png)<!-- -->
+
+```r
+sapply(1:16, function(x){
+  myl = lm(tmer[,x] ~ tmer$timeindex)
+  return(summary(myl)$coefficients[2,4])
+})
+```
+
+```
+##  [1] 0.3490088 0.8490756 0.7300675 0.8645656 0.3881069 0.7695265 0.5357030
+##  [8] 0.7261589 0.2230297 0.3047003 0.4307222 0.8980456 0.6914193 0.4358158
+## [15] 0.6738790 0.4514062
+```
 
 ```r
 ##Correlated with phenotypes?
@@ -200,7 +266,7 @@ for (i in seq(16)) {
   }
 ```
 
-![](wgcna_files/figure-html/unnamed-chunk-4-4.png)<!-- -->
+![](wgcna_files/figure-html/unnamed-chunk-4-5.png)<!-- -->
 
 ```r
 par(mfrow=c(4,4), mar = c(5,3,1,1))
@@ -213,7 +279,7 @@ for (i in seq(16)) {
 }
 ```
 
-![](wgcna_files/figure-html/unnamed-chunk-4-5.png)<!-- -->
+![](wgcna_files/figure-html/unnamed-chunk-4-6.png)<!-- -->
 
 
 
