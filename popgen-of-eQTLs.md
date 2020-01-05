@@ -55,3 +55,62 @@ summary(myhitsdiv$d)
 ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
 ##  0.0000  0.0000  0.1183  0.1809  0.2992  0.4872
 ```
+
+Make the figure
+
+
+```r
+##pi
+dist = 5000
+abc = c('C','C','A','B')
+
+par(mfrow=c(3,1), mar = c(5,5,3,1))
+for (i in c(3,4,2)) {
+mysnp = myhits[i,]
+#print(mysnp)
+mydiv = dplyr::filter(div, scaf == mysnp$scaf)
+plot(mydiv$midpoint, mydiv$pi,xlim = c(mysnp$pos-dist,mysnp$pos+dist), ylab = "", col = "darkgray", xaxt="n", cex=1.5, yaxt="n", ylim=c(0,0.06), bty="n", xlab = 'kB', lwd=2)
+#abline(v=mysnp$ps, col = mysnp$dispColor, lwd=2)
+abline(v=mysnp$pos, col = 'black', lwd=2, lty=2)
+if(i == 2){abline(v = myhits[1,]$pos, col = "black", lwd=2, lty=2)}
+abline(h=pi.975, col = "darkgrey", lwd=2, lty=2)
+axis(1, at=seq(mysnp$pos-dist,mysnp$pos+dist,250), labels = seq(-dist,dist,by=250)/1000, cex.axis=1.5, padj=1)
+#axis(1, at = seq(mysnp$ps-dist,mysnp$ps+dist,1000), labels = seq(mysnp$ps-dist,mysnp$ps+dist,1000)/1000)
+axis(2, las=2, cex.axis=1.5, at = c(0:2)/20)
+mtext(expression(pi),side=2, cex=1, line=4)
+mtext(abc[i], side=3, adj=-0.07, cex=1.3, line=1)
+
+##add in the second eqtl
+}
+```
+
+![](popgen-of-eQTLs_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
+
+```r
+#tajd
+##pi
+dist = 5000
+abc = c('C','C','A','B')
+
+par(mfrow=c(3,1), mar = c(5,7,3,1))
+for (i in c(3,4,2)) {
+mysnp = myhits[i,]
+#print(mysnp)
+mydiv = dplyr::filter(div, scaf == mysnp$scaf)
+plot(mydiv$midpoint, mydiv$tajd,xlim = c(mysnp$pos-dist,mysnp$pos+dist), ylab = "", col = "darkgray", xaxt="n", cex=1.5, yaxt="n", ylim=c(-2.6,2), bty="n", xlab = 'kB', lwd=2)
+#abline(v=mysnp$ps, col = mysnp$dispColor, lwd=2)
+abline(v=mysnp$pos, col = 'black', lwd=2, lty=2)
+if(i == 2){abline(v = myhits[1,]$pos, col = "black", lwd=2, lty=2)}
+abline(h=pi.975, col = "darkgrey", lwd=2, lty=2)
+axis(1, at=seq(mysnp$pos-dist,mysnp$pos+dist,250), labels = seq(-dist,dist,by=250)/1000, cex.axis=1.5, padj=1)
+#axis(1, at = seq(mysnp$ps-dist,mysnp$ps+dist,1000), labels = seq(mysnp$ps-dist,mysnp$ps+dist,1000)/1000)
+axis(2, las=2, cex.axis=1.5, at = c(-2:2))
+mtext("Tajima's D",side=2, cex=1, line=4)
+mtext(abc[i], side=3, adj=-0.07, cex=1.3, line=1)
+
+##add in the second eqtl
+}
+```
+
+![](popgen-of-eQTLs_files/figure-html/unnamed-chunk-2-2.png)<!-- -->
+
