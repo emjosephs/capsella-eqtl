@@ -79,37 +79,32 @@ keepsnps = dplyr::filter(genecounts, numbereQTLs < 30)
 finalset = dplyr::filter(locmerge, gene %in% keepsnps$gene, !is.na(chr))
 
 eqtlsforplot = dplyr::filter(finalset, FDR < 0.1)
-
+nrow(eqtlsforplot)
 
 #postscript("figures/eqtls-pcs.eps",height=9,width=9,paper="special",horizontal=FALSE,colormodel="cymk")
 par(mfrow=c(8,8), mar=c(0,0,0,0))
 par(mar=c(0,0,0,0))
 layout(matrix(c(1,2:9,1,10:17,1,18:25,1,26:33,1,34:41,1,42:49,1,50:57,1,58:65, rep(66,9)), 9, 9, byrow = TRUE))
 plot.new()
-text(0.5,0.5,"Gene location", srt=90, cex=2.5)
+text(0.25,0.5,"Gene location", srt=90, cex=2.5)
 for (i in 8:1){ ##gene locations
   for (j in 1:8){  ##snp location
   mygenechr = paste('scaffold_',as.character(i),sep="")
   mysnpchr = paste('scaffold_',as.character(j),sep="")
 mychrom = dplyr::filter(eqtlsforplot, chr ==mygenechr & snpchr == mysnpchr)
 mysigfdr = dplyr::filter(mychrom, FDR<0.1)
-plot(mychrom$snppos,mychrom$s1, col = 'gray', xlab = "", ylab = "", yaxt="n", xaxt="n", cex=1.5, xlim = myxlim[[j]])
+plot(mychrom$snppos,mychrom$s1, col = 'darkgray', xlab = "", ylab = "", yaxt="n", xaxt="n", lwd=2,cex=1, xlim = myxlim[[j]])
 #text(100000,100000,paste('gene location is',as.character(i)))
-points(mysigfdr$snppos, mysigfdr$s1, col = 'black', pch=16, cex=1.5)  
-if (j==1){mtext(i, side = 2, cex=2, las=2, line=1)} ##if at chrom 1 for snps
-if(i==1){mtext(j, side=1, cex=2, line=2)} ## if at chrom 1 for genes
+if (j==1){mtext(i, side = 2, cex=1.5, las=2, line=1)} ##if at chrom 1 for snps
+if(i==1){mtext(j, side=1, cex=1.5, line=1)} ## if at chrom 1 for genes
 
   }
 }
 plot.new()
-text(0.5,0.4, "SNP location", cex=2.5)
-legend('bottomright', c('FDR < 0.75','FDR < 0.1'), col = c('gray','black'), pch=c(1,16), cex=1.5, bty="n")
+text(0.5,0.25, "SNP location", cex=2.5)
 
 
 
-## look at the hotspot on scaffold 8?
-dplyr::filter(meCovar$all$eqtls, snps=="scaffold_8:12634406")
-## it's one of the coexpression eQTLs!!
 
 ```
 
@@ -131,13 +126,17 @@ hist(finalset$qtldist, xlim = c(0,1e4), col="navy", main = "distances on same ch
 
 ciseqtls = dplyr::filter(finalset, qtldist < 5000, FDR < 0.1)
 transeqtls = dplyr::filter(finalset, qtldist > 5000, FDR < 0.1)
+nrow(ciseqtls)
+nrow(transeqtls)
 ## plot of how many cis and trans eqtls there are at FDR = 0.1
 mybp= barplot(c(nrow(ciseqtls), nrow(transeqtls)), xaxt='n', col = "darkgray", border="white", ylim = c(0,5000), xlim = c(-0.5,3), yaxt="n")
 axis(1, at = mybp, labels = c('cis','trans'), cex.axis=2, tick = F, col = "white")
 axis(2, las=2, cex.axis=2)
 
 ### Compare effect sizes of cis and trans eqtls.
-t.test(abs(ciseqtls$beta), abs(transeqtls$beta)) ## cis eqtls have smaller effects but not by that much
+mytest = t.test(abs(ciseqtls$beta), abs(transeqtls$beta)) ## cis eqtls have smaller effects but not by that much
+mytest
+mytest$p.value
 
 par(mar=c(7,7,2,2), mfrow=c(1,1))
 plot(jitter(c(rep(1, nrow(ciseqtls)), rep(2, nrow(transeqtls)))), abs(c(ciseqtls$beta, transeqtls$beta)), bty="n", xlim = c(0.5,2.5), xaxt="n", yaxt = "n", col = "gray", xlab = "", ylab = "")
@@ -158,6 +157,8 @@ transeqtls = dplyr::filter(finalaf, qtldist > 5000, FDR < 0.1)
 
 
 t.test(ciseqtls$af, transeqtls$af) ## cis eqtls have smaller effects but not by that much
+t.test(ciseqtls$af, transeqtls$af)$p.value
+
 
 par(mar=c(7,7,2,2), mfrow=c(1,1))
 plot(jitter(c(rep(1, nrow(ciseqtls)), rep(2, nrow(transeqtls)))), c(ciseqtls$af, transeqtls$af), bty="n", xlim = c(0.5,2.5), xaxt="n", yaxt = "n", col = "gray", xlab = "", ylab = "")
@@ -191,26 +192,29 @@ table1$pos = sapply(table1$loc, function(x){strsplit(x, split=":")[[1]][2]})
 
 #postscript("figures/eqtls-pcs.eps",height=9,width=9,paper="special",horizontal=FALSE,colormodel="cymk")
 par(mfrow=c(8,8), mar=c(0,0,0,0))
-par(mar=c(0,0,0,0))
 layout(matrix(c(1,2:9,1,10:17,1,18:25,1,26:33,1,34:41,1,42:49,1,50:57,1,58:65, rep(66,9)), 9, 9, byrow = TRUE))
 plot.new()
-text(0.5,0.5,"Gene location", srt=90, cex=2.5)
+text(0.25,0.5,"Gene location", srt=90, cex=2.5)
 for (i in 8:1){ ##gene locations
   for (j in 1:8){  ##snp location
   mygenechr = paste('scaffold_',as.character(i),sep="")
   mysnpchr = paste('scaffold_',as.character(j),sep="")
 mychrom = dplyr::filter(eqtlsforplot, chr ==mygenechr & snpchr == mysnpchr)
+plot(mychrom$snppos,mychrom$s1, col = 'darkgray', xlab = "", ylab = "", yaxt="n", xaxt="n", lwd=2,cex=1, xlim = myxlim[[j]])
 mycoexp = dplyr::filter(table1, scaf == j)
-plot(mychrom$snppos,mychrom$s1, col = 'darkgray', xlab = "", ylab = "", yaxt="n", xaxt="n", cex=1.5, xlim = myxlim[[j]])
-if(nrow(mycoexp)>0){abline(v = mycoexp$pos, col = "red")}
+if (nrow(mycoexp)>0){
+  mycoexpoverlaps = dplyr::filter(mychrom, snppos %in% mycoexp$pos)
+  points(mycoexpoverlaps$snppos, mycoexpoverlaps$s1, col = "black", pch=16)
+}
 
 
-if (j==1){mtext(i, side = 2, cex=2, las=2, line=1)} ##if at chrom 1 for snps
-if(i==1){mtext(j, side=1, cex=2, line=2)} ## if at chrom 1 for genes
+#text(100000,100000,paste('gene location is',as.character(i)))
+if (j==1){mtext(i, side = 2, cex=1.5, las=2, line=1)} ##if at chrom 1 for snps
+if(i==1){mtext(j, side=1, cex=1.5, line=1)} ## if at chrom 1 for genes
+
 
   }
 }
 plot.new()
-text(0.5,0.4, "SNP location", cex=2.5)
-legend('bottomright', c('FDR < 0.75','FDR < 0.1'), col = c('gray','black'), pch=c(1,16), cex=1.5, bty="n")
+text(0.5,0.25, "SNP location", cex=2.5)
 ```
