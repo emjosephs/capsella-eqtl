@@ -111,6 +111,8 @@ text(0.5,0.25, "SNP location", cex=2.5)
 Cis vs trans effect sizes?
 ```{r}
 ### get the distances of eqtls from the gene
+par(mar=c(7,7,2,2), mfrow=c(1,1))
+
 
 finalset$qtldist = apply(finalset, 1, function(x){
   qtldist = 1e8
@@ -122,7 +124,7 @@ finalset$qtldist = apply(finalset, 1, function(x){
   return(qtldist)
 })
 
-hist(finalset$qtldist, xlim = c(0,1e4), col="navy", main = "distances on same chrom", breaks=100000, ylim = c(0,6000))
+hist(finalset$qtldist, xlim = c(0,1e4), col="navy", main = "distances on same chrom", breaks=100000, ylim = c(0,6000), xlab ="")
 
 ciseqtls = dplyr::filter(finalset, qtldist < 5000, FDR < 0.1)
 transeqtls = dplyr::filter(finalset, qtldist > 5000, FDR < 0.1)
@@ -138,12 +140,16 @@ mytest = t.test(abs(ciseqtls$beta), abs(transeqtls$beta)) ## cis eqtls have smal
 mytest
 mytest$p.value
 
-par(mar=c(7,7,2,2), mfrow=c(1,1))
 plot(jitter(c(rep(1, nrow(ciseqtls)), rep(2, nrow(transeqtls)))), abs(c(ciseqtls$beta, transeqtls$beta)), bty="n", xlim = c(0.5,2.5), xaxt="n", yaxt = "n", col = "gray", xlab = "", ylab = "")
 axis(2, las=2, cex.axis=2)
 mtext('abs(beta)',2, line=5, cex=2)
 axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
 points(c(1,2), c(mean(abs(ciseqtls$beta)), mean(abs(transeqtls$beta))), cex=3, pch=16)
+
+par(mfrow=c(2,1))
+hist(abs(ciseqtls$beta), xlim = c(0,3), col = "darkgray", border="white", breaks=seq(0,3,.1), main="", xlab = "local effect", freq=F)
+hist(abs(transeqtls$beta), xlim = c(0,3), col = "darkgray", border="white", breaks = seq(0,3,.1), main="", xlab ="trans effect", freq=F)
+
 ```
 
 Compare allele freqs of cis and trans
@@ -222,3 +228,40 @@ text(0.5,0.25, "SNP location", cex=2.5)
 ```
 
 
+Relationship between number of genes and effect size?
+```{r}
+par(mfrow=c(1,1), mar=c(7,7,3,3))
+finalsig = dplyr::filter(finalaf, FDR < 0.1) ##only want to look at FDR < 0.1
+
+##get unique number of genes
+genecounts = dplyr::count(finalsig, gene)
+nrow(genecounts)
+
+## get number of genes per snp
+snpcounts = dplyr::count(finalsig, snps)
+summary(snpcounts$n)
+nrow(snpcounts) #total number of snps with at least one association
+nrow(dplyr::filter(snpcounts, n>1)) #snps with >1 association
+
+par(mfrow=c(2,1))
+hist(snpcounts$n, col = "darkgray", border="white", xlab = "# of genes associated with each snp", main="", breaks=seq(0,100))
+hist(snpcounts$n, col = "darkgray", border="white", xlab = "# of genes associated with each snp", main="", breaks=seq(0,100), ylim = c(0,100))
+
+
+##compare snps with 1 assoc to snps with >1 assoc
+snpcountsaf = dplyr::left_join(snpcounts, finalsig, by="snps")## get the af in the snp counts table
+snpcountsaf = snpcountsaf[!duplicated(snpcountsaf$snps),]#remove duplicates
+onegene = dplyr::filter(snpcountsaf, n == 1)
+moregenes = dplyr::filter(snpcountsaf, n>1)
+
+t.test(onegene$af, moregenes$af)
+
+plot(jitter(c(rep(1, nrow(onegene)), rep(2, nrow(moregenes)))), c(onegene$af, moregenes$af), bty="n", xlim = c(0.5,2.5), xaxt="n", yaxt = "n", col = "gray", xlab = "", ylab = "")
+axis(2, las=2, cex.axis=2)
+mtext('MAF',2, line=5, cex=2)
+axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
+points(c(1,2), c(mean(onegene$af, na.rm=T), mean(moregenes$af, na.rm=T)), cex=3, pch=16)
+
+###what if we remove the one with 93 associations?
+
+```

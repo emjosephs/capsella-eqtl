@@ -137,6 +137,8 @@ Cis vs trans effect sizes?
 
 ```r
 ### get the distances of eqtls from the gene
+par(mar=c(7,7,2,2), mfrow=c(1,1))
+
 
 finalset$qtldist = apply(finalset, 1, function(x){
   qtldist = 1e8
@@ -148,7 +150,7 @@ finalset$qtldist = apply(finalset, 1, function(x){
   return(qtldist)
 })
 
-hist(finalset$qtldist, xlim = c(0,1e4), col="navy", main = "distances on same chrom", breaks=100000, ylim = c(0,6000))
+hist(finalset$qtldist, xlim = c(0,1e4), col="navy", main = "distances on same chrom", breaks=100000, ylim = c(0,6000), xlab ="")
 ```
 
 ![](matrix-eQTL_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
@@ -209,7 +211,6 @@ mytest$p.value
 ```
 
 ```r
-par(mar=c(7,7,2,2), mfrow=c(1,1))
 plot(jitter(c(rep(1, nrow(ciseqtls)), rep(2, nrow(transeqtls)))), abs(c(ciseqtls$beta, transeqtls$beta)), bty="n", xlim = c(0.5,2.5), xaxt="n", yaxt = "n", col = "gray", xlab = "", ylab = "")
 axis(2, las=2, cex.axis=2)
 mtext('abs(beta)',2, line=5, cex=2)
@@ -218,6 +219,14 @@ points(c(1,2), c(mean(abs(ciseqtls$beta)), mean(abs(transeqtls$beta))), cex=3, p
 ```
 
 ![](matrix-eQTL_files/figure-html/unnamed-chunk-4-3.png)<!-- -->
+
+```r
+par(mfrow=c(2,1))
+hist(abs(ciseqtls$beta), xlim = c(0,3), col = "darkgray", border="white", breaks=seq(0,3,.1), main="", xlab = "local effect", freq=F)
+hist(abs(transeqtls$beta), xlim = c(0,3), col = "darkgray", border="white", breaks = seq(0,3,.1), main="", xlab ="trans effect", freq=F)
+```
+
+![](matrix-eQTL_files/figure-html/unnamed-chunk-4-4.png)<!-- -->
 
 Compare allele freqs of cis and trans
 
@@ -314,6 +323,10 @@ points(c(1,2), c(mean(cisunique$af, na.rm=T), mean(transunique$af, na.rm=T)), ce
 
 ![](matrix-eQTL_files/figure-html/unnamed-chunk-5-2.png)<!-- -->
 
+```r
+save('finalaf', file = "data/allbyall.rda")
+```
+
 Remake the plot of all eQTLs but add in the coexpression eqtls
 
 
@@ -352,3 +365,90 @@ text(0.5,0.25, "SNP location", cex=2.5)
 ```
 
 ![](matrix-eQTL_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+
+
+Relationship between number of genes and effect size?
+
+```r
+par(mfrow=c(1,1), mar=c(7,7,3,3))
+finalsig = dplyr::filter(finalaf, FDR < 0.1) ##only want to look at FDR < 0.1
+
+##get unique number of genes
+genecounts = dplyr::count(finalsig, gene)
+nrow(genecounts)
+```
+
+```
+## [1] 2310
+```
+
+```r
+## get number of genes per snp
+snpcounts = dplyr::count(finalsig, snps)
+summary(snpcounts$n)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##   1.000   1.000   1.000   1.119   1.000  93.000
+```
+
+```r
+nrow(snpcounts) #total number of snps with at least one association
+```
+
+```
+## [1] 4971
+```
+
+```r
+nrow(dplyr::filter(snpcounts, n>1)) #snps with >1 association
+```
+
+```
+## [1] 356
+```
+
+```r
+par(mfrow=c(2,1))
+hist(snpcounts$n, col = "darkgray", border="white", xlab = "# of genes associated with each snp", main="", breaks=seq(0,100))
+hist(snpcounts$n, col = "darkgray", border="white", xlab = "# of genes associated with each snp", main="", breaks=seq(0,100), ylim = c(0,100))
+```
+
+![](matrix-eQTL_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+
+```r
+##compare snps with 1 assoc to snps with >1 assoc
+snpcountsaf = dplyr::left_join(snpcounts, finalsig, by="snps")## get the af in the snp counts table
+snpcountsaf = snpcountsaf[!duplicated(snpcountsaf$snps),]#remove duplicates
+onegene = dplyr::filter(snpcountsaf, n == 1)
+moregenes = dplyr::filter(snpcountsaf, n>1)
+
+t.test(onegene$af, moregenes$af)
+```
+
+```
+## 
+## 	Welch Two Sample t-test
+## 
+## data:  onegene$af and moregenes$af
+## t = 3.9827, df = 402.85, p-value = 8.083e-05
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  0.01422754 0.04196308
+## sample estimates:
+## mean of x mean of y 
+## 0.2543185 0.2262232
+```
+
+```r
+plot(jitter(c(rep(1, nrow(onegene)), rep(2, nrow(moregenes)))), c(onegene$af, moregenes$af), bty="n", xlim = c(0.5,2.5), xaxt="n", yaxt = "n", col = "gray", xlab = "", ylab = "")
+axis(2, las=2, cex.axis=2)
+mtext('MAF',2, line=5, cex=2)
+axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
+points(c(1,2), c(mean(onegene$af, na.rm=T), mean(moregenes$af, na.rm=T)), cex=3, pch=16)
+
+###what if we remove the one with 93 associations?
+```
+
+![](matrix-eQTL_files/figure-html/unnamed-chunk-7-2.png)<!-- -->
