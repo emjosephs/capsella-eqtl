@@ -134,6 +134,23 @@ axis(2, las=2, cex.axis=1.5, at = c(0:5))
 Look at pop gen around all-by-all sites
 
 ```{r}
+load('data/allbyall.rda')
+finalaf$myIndex = as.numeric(row.names(finalaf))
 
+#make genomic ranges object for coexpression eQTLs
+allranges = GRanges(seqname = finalaf$snpchr, ranges = IRanges(start=as.numeric(finalaf$snppos), width=1))
+
+
+
+##find overlaps
+allOverlaps = as.matrix(findOverlaps(myranges,allranges))
+allhits = dplyr::inner_join(as.data.frame(allOverlaps), finalaf, by = c("subjectHits" = "myIndex")) 
+allhitsdiv = dplyr::inner_join(allhits, div, by=c("queryHits"="myIndex"))
+
+transeqtld = dplyr::filter(allhitsdiv, FDR < 0.1, qtldist > 5000)
+ciseqtld = dplyr::filter(allhitsdiv, FDR < 0.1, qtldist < 5000)
+
+t.test(transeqtld$pi, ciseqtld$pi)
+t.test(transeqtld$tajd, ciseqtld$tajd)
 
 ```

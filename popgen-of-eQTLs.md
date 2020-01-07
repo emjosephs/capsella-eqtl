@@ -141,4 +141,57 @@ axis(2, las=2, cex.axis=1.5, at = c(0:5))
 ![](popgen-of-eQTLs_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
 
 
+Look at pop gen around all-by-all sites
 
+
+```r
+load('data/allbyall.rda')
+finalaf$myIndex = as.numeric(row.names(finalaf))
+
+#make genomic ranges object for coexpression eQTLs
+allranges = GRanges(seqname = finalaf$snpchr, ranges = IRanges(start=as.numeric(finalaf$snppos), width=1))
+
+
+
+##find overlaps
+allOverlaps = as.matrix(findOverlaps(myranges,allranges))
+allhits = dplyr::inner_join(as.data.frame(allOverlaps), finalaf, by = c("subjectHits" = "myIndex")) 
+allhitsdiv = dplyr::inner_join(allhits, div, by=c("queryHits"="myIndex"))
+
+transeqtld = dplyr::filter(allhitsdiv, FDR < 0.1, qtldist > 5000)
+ciseqtld = dplyr::filter(allhitsdiv, FDR < 0.1, qtldist < 5000)
+
+t.test(transeqtld$pi, ciseqtld$pi)
+```
+
+```
+## 
+## 	Welch Two Sample t-test
+## 
+## data:  transeqtld$pi and ciseqtld$pi
+## t = 1.7321, df = 3942, p-value = 0.08333
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -7.150721e-05  1.155827e-03
+## sample estimates:
+##  mean of x  mean of y 
+## 0.01604556 0.01550340
+```
+
+```r
+t.test(transeqtld$tajd, ciseqtld$tajd)
+```
+
+```
+## 
+## 	Welch Two Sample t-test
+## 
+## data:  transeqtld$tajd and ciseqtld$tajd
+## t = -6.2705, df = 4016.8, p-value = 3.98e-10
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -0.18566706 -0.09721853
+## sample estimates:
+##  mean of x  mean of y 
+## -0.5963226 -0.4548798
+```
