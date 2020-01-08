@@ -89,16 +89,16 @@ sighits
 ```
 
 ```
-##   chr                  rs       ps n_miss allele1 allele0    af   logl_H1 l_mle
-## 1   7 scaffold_7:17305936 17305936      0       A       G 0.093 -185.0856 1e+05
-## 2   8 scaffold_8:12634406 12634406      0       C       T 0.317 -182.4722 1e+05
-## 3   4 scaffold_4:12621988 12621988      0       C       T 0.066 -183.9238 1e+05
-## 4   4 scaffold_4:12623220 12623220      0       A       T 0.052 -182.8667 1e+05
-##          p_lrt        fdr module
-## 1 1.025370e-07 0.09574403      9
-## 2 6.937162e-09 0.01295516      9
-## 3 2.858041e-08 0.02668699     16
-## 4 9.623431e-09 0.01797178     16
+##   chr                  rs       ps n_miss allele1 allele0    af   logl_H1
+## 1   7 scaffold_7:17305936 17305936      0       A       G 0.093 -185.0856
+## 2   8 scaffold_8:12634406 12634406      0       C       T 0.317 -182.4722
+## 3   4 scaffold_4:12621988 12621988      0       C       T 0.066 -183.9238
+## 4   4 scaffold_4:12623220 12623220      0       A       T 0.052 -182.8667
+##   l_mle        p_lrt        fdr module
+## 1 1e+05 1.025370e-07 0.09574403      9
+## 2 1e+05 6.937162e-09 0.01295516      9
+## 3 1e+05 2.858041e-08 0.02668699     16
+## 4 1e+05 9.623431e-09 0.01797178     16
 ```
 
 
@@ -110,7 +110,7 @@ First need to pull out the regions around hits from the gemma output files
 ```bash
 cd data/gemma-files
 rsync -ave ssh josep993@rsync.hpcc.msu.edu:trans-eQTL/data/gemma/batched-new/output/tb.9.assoc.txt .
-rsync -ave ssh josep993@rsync.hpcc.msu.edu:trans-eQTL/data/gemma/batched-new/output/tb.9.assoc.txt .
+rsync -ave ssh josep993@rsync.hpcc.msu.edu:trans-eQTL/data/gemma/batched-new/output/tb.16.assoc.txt .
 awk '$1 == 7 && $3 > 17295936 && $3 <  17315936' tb.9.assoc.txt > eqtl1.txt
 awk '$1 == 8 && $3 > 12624406 && $3 <  12644406' tb.9.assoc.txt > eqtl2.txt
 awk '$1 == 4 && $3 > 12611988 && $3 <  12631988' tb.16.assoc.txt > eqtl3.txt
@@ -157,28 +157,17 @@ plotsnp <- function(y){
   }
 
 par(mfrow=c(3,1), mar=c(4,4,2,1))
-sapply(1:3, plotsnp)
+test = sapply(1:3, plotsnp)
 ```
 
 ![](coexpression-eqtls_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
-
-```
-## [[1]]
-## NULL
-## 
-## [[2]]
-## NULL
-## 
-## [[3]]
-## NULL
-```
 
 
 Are any of them also in the all-by-all analysis?
 
 ```r
 load('data/matrixeqtl-files/matrixeqtl-batched.rda')
-allbyall = meCovar$all$eqtls
+allbyall = dplyr::filter(meCovar$all$eqtls, FDR < 0.1)
 
 myoverl = lapply(1:4, function(x){
   myeqtl = sighits[x,]
@@ -190,31 +179,342 @@ myoverl = lapply(1:4, function(x){
 ##are any eqtls of nearby genes? Nope
 
 ##2nd eQTL
-x = sighits[2,]
-nearby2 = dplyr::filter(modulelocs, V1 == paste('scaffold_',x$chr,sep=""), V4 > x[[3]]-5e4, V5 < x[[3]]+5e4)
-over2 = dplyr::filter(myoverl[[2]], gene %in% nearby2$pac)
-nrow(over2)
+merge2 = dplyr::left_join(myoverl[[2]], modulelocs, by = c('gene'='pac')) ##look at all the genes associated with the 2nd eqtl
 ```
 
 ```
-## [1] 0
+## Warning: Column `gene`/`pac` joining factor and character vector, coercing
+## into character vector
+```
+
+```r
+merge2$module
+```
+
+```
+##  [1] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "lightyellow"
+##  [6] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "lightyellow"
+## [11] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "lightyellow"
+## [16] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "lightyellow"
+## [21] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "lightyellow"
+## [26] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "lightyellow"
+## [31] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "lightyellow"
+## [36] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "lightyellow"
+## [41] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "lightyellow"
+## [46] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "lightyellow"
+## [51] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "turquoise"  
+## [56] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "lightyellow"
+## [61] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "lightyellow"
+## [66] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "lightyellow"
+## [71] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "lightyellow"
+## [76] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "lightyellow"
+## [81] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "lightyellow"
+## [86] "lightyellow" "lightyellow" "lightyellow" "lightyellow" "lightyellow"
+## [91] "lightyellow" "lightyellow" "lightyellow"
+```
+
+```r
+dplyr::filter(merge2, V1 == "scaffold_8") ##none are nearby
+```
+
+```
+##                  snps     gene statistic       pvalue        FDR      beta
+## 1 scaffold_8:12634406 20912992  6.488058 1.418717e-09 0.00752785 0.7203926
+## 2 scaffold_8:12634406 20913261  6.192924 6.266276e-09 0.02643169 0.6976221
+## 3 scaffold_8:12634406 20911702  6.164205 7.226999e-09 0.02975409 0.6924460
+## 4 scaffold_8:12634406 20914131  6.150389 7.739416e-09 0.03152818 0.6910472
+## 5 scaffold_8:12634406 20912958  6.100880 9.885957e-09 0.03872978 0.6864430
+## 6 scaffold_8:12634406 20911471  5.891392 2.752553e-08 0.08864961 0.6640708
+## 7 scaffold_8:12634406 20912034  5.882484 2.873807e-08 0.09164247 0.6685327
+##        module         V1       V2   V3       V4       V5 V6 V7 V8
+## 1 lightyellow scaffold_8 JGI_gene mRNA 11733053 11735000  .  -  .
+## 2 lightyellow scaffold_8 JGI_gene mRNA 12288649 12289711  .  +  .
+## 3 lightyellow scaffold_8 JGI_gene mRNA 10890946 10892383  .  +  .
+## 4 lightyellow scaffold_8 JGI_gene mRNA  2536322  2537756  .  -  .
+## 5 lightyellow scaffold_8 JGI_gene mRNA  7407406  7409233  .  -  .
+## 6 lightyellow scaffold_8 JGI_gene mRNA  5810493  5812309  .  +  .
+## 7 lightyellow scaffold_8 JGI_gene mRNA  2569073  2571324  .  -  .
+##                                                                              V9
+## 1 ID=PAC:20912992;Name=Carubv10027003m;pacid=20912992;Parent=Carubv10027003m.g;
+## 2 ID=PAC:20913261;Name=Carubv10027305m;pacid=20913261;Parent=Carubv10027305m.g;
+## 3 ID=PAC:20911702;Name=Carubv10027219m;pacid=20911702;Parent=Carubv10027219m.g;
+## 4 ID=PAC:20914131;Name=Carubv10027353m;pacid=20914131;Parent=Carubv10027353m.g;
+## 5 ID=PAC:20912958;Name=Carubv10027094m;pacid=20912958;Parent=Carubv10027094m.g;
+## 6 ID=PAC:20911471;Name=Carubv10027179m;pacid=20911471;Parent=Carubv10027179m.g;
+## 7 ID=PAC:20912034;Name=Carubv10027125m;pacid=20912034;Parent=Carubv10027125m.g;
 ```
 
 ```r
 ##3rd eQTL
-x = sighits[3,]
-nearby3 = dplyr::filter(modulelocs, V1 == paste('scaffold_',x$chr,sep=""), V4 > x[[3]]-5e4, V5 < x[[3]]+5e4)
-overl3 = myoverl[[3]]
-overl3$pac = as.character(overl3$gene)
-over3 = dplyr::filter(overl3, pac %in% nearby3$pac)
-nrow(over3) ###CHECK GENE VS FACTOR ISSUES
+merge3 = dplyr::left_join(myoverl[[3]], modulelocs, by = c('gene'='pac')) ##look at all the genes associated with the 2nd eqtl
 ```
 
 ```
-## [1] 0
+## Warning: Column `gene`/`pac` joining factor and character vector, coercing
+## into character vector
+```
+
+```r
+merge3$module
+```
+
+```
+## [1] "turquoise"  "lightgreen"
+```
+
+```r
+merge3
+```
+
+```
+##                  snps     gene statistic       pvalue        FDR     beta
+## 1 scaffold_4:12621988 20899625  6.217384 5.547928e-09 0.02390599 1.322746
+## 2 scaffold_4:12621988 20901048  5.859675 3.208690e-08 0.09974157 1.252687
+##       module         V1       V2   V3      V4      V5 V6 V7 V8
+## 1  turquoise scaffold_3 JGI_gene mRNA 4418698 4422521  .  +  .
+## 2 lightgreen scaffold_3 JGI_gene mRNA 6063493 6067068  .  +  .
+##                                                                              V9
+## 1 ID=PAC:20899625;Name=Carubv10012843m;pacid=20899625;Parent=Carubv10012843m.g;
+## 2 ID=PAC:20901048;Name=Carubv10014027m;pacid=20901048;Parent=Carubv10014027m.g;
+```
+
+```r
+##4th eQTL
+merge4 = dplyr::left_join(myoverl[[4]], modulelocs, by = c('gene'='pac')) ##look at all the genes associated with the 2nd eqtl
+```
+
+```
+## Warning: Column `gene`/`pac` joining factor and character vector, coercing
+## into character vector
+```
+
+```r
+merge4$module
+```
+
+```
+## [1] "lightyellow" "lightgreen"  "white"       "cyan"        "lightyellow"
 ```
 
 1st eQTL is intergenic
 2nd eQTL is a 4fold site
 3rd eQTL is intergenic
 4th eQTL is in a CNC!
+
+Make an output table
+
+```r
+mysites = c('intergenic','exon','intergenic','CNS')
+mymod = moduleIndex[sighits$module]
+
+outTable = data.frame(mod = mymod, loc = sighits$rs, af = sighits$af, p = sighits$p_lrt, fdr = sighits$fdr, sitetype = mysites, stringsAsFactors=F)
+
+#write.table(outTable, file = "Table1", row.names=F, quote=F, col.names=T)
+```
+
+The light yellow module is correlated with flowering time. Do these snps affect flowering time?
+
+Need to get genotypes at the eqtls first.
+
+```bash
+head -n 1 146_tagsnps_transposed > coexp-eqtl-genos
+awk '$1 == "scaffold_7:17305936"' 146_tagsnps_transposed >> coexp-eqtl-genos
+awk '$1 == "scaffold_8:12634406"' 146_tagsnps_transposed >> coexp-eqtl-genos
+awk '$1 == "scaffold_4:12621988"' 146_tagsnps_transposed >> coexp-eqtl-genos
+awk '$1 == "scaffold_4:12623220"' 146_tagsnps_transposed >> coexp-eqtl-genos
+```
+
+
+```r
+phenos = read.table('data/phenotypes_NA.txt', header=T, stringsAsFactors = F)
+mygenos = read.table('data/matrixeqtl-files/coexp-eqtl-genos', header=T, stringsAsFactors=F)
+genodf = data.frame(t(mygenos[,-1]), stringsAsFactors = F)
+names(genodf) = mygenos$id
+genodf$xid = row.names(genodf)
+genodf$IID = sapply(genodf$xid, function(x){substr(x, 2, 100)})
+
+#replace -1s with NAs
+genodf[genodf == -1] <- NA
+
+#merge the phenotypes with the genotypes
+phenogeno = dplyr::inner_join(phenos, genodf, by='IID')
+
+##remove the one with missing time data -- 95
+phenogeno = dplyr::filter(phenogeno, IID != 95)
+
+
+par(mfrow=c(1,1), mar=c(5,5,3,3))
+##so eqtls 1 and 2 are for a module correlated with flowering time
+cor.test(phenogeno$'scaffold_7:17305936', phenogeno$bolt)
+```
+
+```
+## 
+## 	Pearson's product-moment correlation
+## 
+## data:  phenogeno$"scaffold_7:17305936" and phenogeno$bolt
+## t = -0.70342, df = 132, p-value = 0.483
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  -0.2283326  0.1096138
+## sample estimates:
+##        cor 
+## -0.0611106
+```
+
+```r
+cor.test(phenogeno$'scaffold_8:12634406', phenogeno$bolt)
+```
+
+```
+## 
+## 	Pearson's product-moment correlation
+## 
+## data:  phenogeno$"scaffold_8:12634406" and phenogeno$bolt
+## t = 1.1027, df = 138, p-value = 0.2721
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  -0.0735904  0.2553974
+## sample estimates:
+##        cor 
+## 0.09345385
+```
+
+```r
+cor.test(phenogeno$'scaffold_4:12621988', phenogeno$bolt)
+```
+
+```
+## 
+## 	Pearson's product-moment correlation
+## 
+## data:  phenogeno$"scaffold_4:12621988" and phenogeno$bolt
+## t = -1.1245, df = 130, p-value = 0.2629
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  -0.26458334  0.07396471
+## sample estimates:
+##         cor 
+## -0.09814818
+```
+
+```r
+cor.test(phenogeno$'scaffold_4:12623220', phenogeno$bolt)
+```
+
+```
+## 
+## 	Pearson's product-moment correlation
+## 
+## data:  phenogeno$"scaffold_4:12623220" and phenogeno$bolt
+## t = -1.5715, df = 137, p-value = 0.1184
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  -0.2930757  0.0341900
+## sample estimates:
+##        cor 
+## -0.1330683
+```
+
+```r
+cor.test(phenogeno$'scaffold_7:17305936', phenogeno$N)
+```
+
+```
+## 
+## 	Pearson's product-moment correlation
+## 
+## data:  phenogeno$"scaffold_7:17305936" and phenogeno$N
+## t = -2.0725, df = 135, p-value = 0.04012
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  -0.333496409 -0.008126682
+## sample estimates:
+##        cor 
+## -0.1756028
+```
+
+```r
+cor.test(phenogeno$'scaffold_8:12634406', phenogeno$N)
+```
+
+```
+## 
+## 	Pearson's product-moment correlation
+## 
+## data:  phenogeno$"scaffold_8:12634406" and phenogeno$N
+## t = 1.3361, df = 141, p-value = 0.1837
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  -0.05330948  0.27099217
+## sample estimates:
+##       cor 
+## 0.1118176
+```
+
+```r
+cor.test(phenogeno$'scaffold_4:12621988', phenogeno$N)
+```
+
+```
+## 
+## 	Pearson's product-moment correlation
+## 
+## data:  phenogeno$"scaffold_4:12621988" and phenogeno$N
+## t = -0.30676, df = 132, p-value = 0.7595
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  -0.1953949  0.1435472
+## sample estimates:
+##         cor 
+## -0.02669094
+```
+
+```r
+cor.test(phenogeno$'scaffold_4:12623220', phenogeno$N)
+```
+
+```
+## 
+## 	Pearson's product-moment correlation
+## 
+## data:  phenogeno$"scaffold_4:12623220" and phenogeno$N
+## t = -0.63901, df = 140, p-value = 0.5239
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  -0.2167296  0.1117927
+## sample estimates:
+##         cor 
+## -0.05392766
+```
+
+
+What is the gene that eQTL 2 is in?
+
+
+```r
+x = sighits[2,]
+eqtlGene = dplyr::filter(modulelocs, V1 == paste('scaffold_',x$chr,sep=""), V4 < x[[3]], V5 > x[[3]])
+eqtlGene
+```
+
+```
+##        pac    module         V1       V2   V3       V4       V5 V6 V7 V8
+## 1 20912595 turquoise scaffold_8 JGI_gene mRNA 12633354 12636072  .  +  .
+##                                                                              V9
+## 1 ID=PAC:20912595;Name=Carubv10025970m;pacid=20912595;Parent=Carubv10025970m.g;
+```
+
+PTHR10579
+PANTHER
+CALCIUM-ACTIVATED CHLORIDE CHANNEL REGULATOR
+PTHR10579:SF59
+PANTHER
+C3H4 TYPE ZINC FINGER PROTEIN-RELATED
+
+	
+AT5G65683.1
+
+Title: The WAVY GROWTH 3 E3 ligase family controls the gravitropic response in Arabidopsis roots
+
+

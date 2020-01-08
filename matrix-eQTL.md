@@ -43,11 +43,21 @@ plot(meCovar)
 ![](matrix-eQTL_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
 
 ```r
+meCovar$all$ntests
+```
+
+```
+## [1] 35587985444
+```
+
+```r
+eqtls = dplyr::filter(meCovar$all$eqtls, FDR < 0.1)
+
 geneloc = read.table('data/matrixeqtl-files/genelocation.matrixeqtl', header=T, stringsAsFactors = F)
 geneloc$gene = as.character(geneloc$geneid)
 
 ## merge gene locations with eQTL results (looking at Tag sites only)
-locmerge = dplyr::left_join(meCovar$all$eqtls, geneloc, by = "gene")
+locmerge = dplyr::left_join(eqtls, geneloc, by = "gene")
 ```
 
 ```
@@ -91,7 +101,7 @@ dim(weirdos)
 ```
 
 ```
-## [1] 73  2
+## [1] 42  2
 ```
 
 ```r
@@ -99,12 +109,11 @@ keepsnps = dplyr::filter(genecounts, numbereQTLs < 30)
 
 finalset = dplyr::filter(locmerge, gene %in% keepsnps$gene, !is.na(chr))
 
-eqtlsforplot = dplyr::filter(finalset, FDR < 0.1)
-nrow(eqtlsforplot)
+nrow(finalset)
 ```
 
 ```
-## [1] 5563
+## [1] 6231
 ```
 
 ```r
@@ -118,7 +127,7 @@ for (i in 8:1){ ##gene locations
   for (j in 1:8){  ##snp location
   mygenechr = paste('scaffold_',as.character(i),sep="")
   mysnpchr = paste('scaffold_',as.character(j),sep="")
-mychrom = dplyr::filter(eqtlsforplot, chr ==mygenechr & snpchr == mysnpchr)
+mychrom = dplyr::filter(finalset, chr ==mygenechr & snpchr == mysnpchr)
 mysigfdr = dplyr::filter(mychrom, FDR<0.1)
 plot(mychrom$snppos,mychrom$s1, col = 'darkgray', xlab = "", ylab = "", yaxt="n", xaxt="n", lwd=2,cex=1, xlim = myxlim[[j]])
 #text(100000,100000,paste('gene location is',as.character(i)))
@@ -132,6 +141,8 @@ text(0.5,0.25, "SNP location", cex=2.5)
 ```
 
 ![](matrix-eQTL_files/figure-html/unnamed-chunk-3-4.png)<!-- -->
+
+
 
 Cis vs trans effect sizes?
 
@@ -162,7 +173,7 @@ nrow(ciseqtls)
 ```
 
 ```
-## [1] 3500
+## [1] 3759
 ```
 
 ```r
@@ -170,7 +181,7 @@ nrow(transeqtls)
 ```
 
 ```
-## [1] 2063
+## [1] 2472
 ```
 
 ```r
@@ -193,13 +204,13 @@ mytest
 ## 	Welch Two Sample t-test
 ## 
 ## data:  abs(ciseqtls$beta) and abs(transeqtls$beta)
-## t = -10.259, df = 3627.4, p-value < 2.2e-16
+## t = -13.293, df = 4498.4, p-value < 2.2e-16
 ## alternative hypothesis: true difference in means is not equal to 0
 ## 95 percent confidence interval:
-##  -0.09160238 -0.06220649
+##  -0.10768260 -0.08000152
 ## sample estimates:
 ## mean of x mean of y 
-## 0.9099688 0.9868733
+## 0.9168799 1.0107220
 ```
 
 ```r
@@ -207,7 +218,7 @@ mytest$p.value
 ```
 
 ```
-## [1] 2.322282e-24
+## [1] 1.413332e-39
 ```
 
 ```r
@@ -228,6 +239,11 @@ hist(abs(transeqtls$beta), xlim = c(0,3), col = "darkgray", border="white", brea
 
 ![](matrix-eQTL_files/figure-html/unnamed-chunk-4-4.png)<!-- -->
 
+
+
+
+
+
 Compare allele freqs of cis and trans
 
 ```r
@@ -239,7 +255,7 @@ ciseqtls = dplyr::filter(finalaf, qtldist < 5000, FDR < 0.1)
 transeqtls = dplyr::filter(finalaf, qtldist > 5000, FDR < 0.1)
 
 
-t.test(ciseqtls$af, transeqtls$af) ## cis eqtls have smaller effects but not by that much
+t.test(ciseqtls$af, transeqtls$af) 
 ```
 
 ```
@@ -247,13 +263,13 @@ t.test(ciseqtls$af, transeqtls$af) ## cis eqtls have smaller effects but not by 
 ## 	Welch Two Sample t-test
 ## 
 ## data:  ciseqtls$af and transeqtls$af
-## t = 12.871, df = 4162, p-value < 2.2e-16
+## t = 15.73, df = 5177.1, p-value < 2.2e-16
 ## alternative hypothesis: true difference in means is not equal to 0
 ## 95 percent confidence interval:
-##  0.03947374 0.05366036
+##  0.04586505 0.05892493
 ## sample estimates:
 ## mean of x mean of y 
-## 0.2685572 0.2219901
+## 0.2666848 0.2142899
 ```
 
 ```r
@@ -261,7 +277,7 @@ t.test(ciseqtls$af, transeqtls$af)$p.value
 ```
 
 ```
-## [1] 3.340483e-37
+## [1] 1.691664e-54
 ```
 
 ```r
@@ -273,7 +289,7 @@ axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
 points(c(1,2), c(mean(ciseqtls$af, na.rm=T), mean(transeqtls$af, na.rm=T)), cex=3, pch=16)
 ```
 
-![](matrix-eQTL_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
+![](matrix-eQTL_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
 
 ```r
 ##driven by the hotspot? remove duplicates from the trans
@@ -282,7 +298,7 @@ dim(transunique)
 ```
 
 ```
-## [1] 1699   17
+## [1] 2011   17
 ```
 
 ```r
@@ -291,11 +307,11 @@ dim(cisunique)
 ```
 
 ```
-## [1] 3382   17
+## [1] 3618   17
 ```
 
 ```r
-t.test(cisunique$af, transunique$af) ## cis eqtls have smaller effects but not by that much
+t.test(cisunique$af, transunique$af) ## c
 ```
 
 ```
@@ -303,13 +319,13 @@ t.test(cisunique$af, transunique$af) ## cis eqtls have smaller effects but not b
 ## 	Welch Two Sample t-test
 ## 
 ## data:  cisunique$af and transunique$af
-## t = 13.632, df = 3258.2, p-value < 2.2e-16
+## t = 15.915, df = 4063, p-value < 2.2e-16
 ## alternative hypothesis: true difference in means is not equal to 0
 ## 95 percent confidence interval:
-##  0.04535055 0.06058810
+##  0.04999115 0.06403808
 ## sample estimates:
 ## mean of x mean of y 
-## 0.2693494 0.2163800
+## 0.2680197 0.2110051
 ```
 
 ```r
@@ -321,7 +337,7 @@ axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
 points(c(1,2), c(mean(cisunique$af, na.rm=T), mean(transunique$af, na.rm=T)), cex=3, pch=16)
 ```
 
-![](matrix-eQTL_files/figure-html/unnamed-chunk-5-2.png)<!-- -->
+![](matrix-eQTL_files/figure-html/unnamed-chunk-6-2.png)<!-- -->
 
 ```r
 save('finalaf', file = "data/allbyall.rda")
@@ -344,7 +360,7 @@ for (i in 8:1){ ##gene locations
   for (j in 1:8){  ##snp location
   mygenechr = paste('scaffold_',as.character(i),sep="")
   mysnpchr = paste('scaffold_',as.character(j),sep="")
-mychrom = dplyr::filter(eqtlsforplot, chr ==mygenechr & snpchr == mysnpchr)
+mychrom = dplyr::filter(finalset, chr ==mygenechr & snpchr == mysnpchr)
 plot(mychrom$snppos,mychrom$s1, col = 'darkgray', xlab = "", ylab = "", yaxt="n", xaxt="n", lwd=2,cex=1, xlim = myxlim[[j]])
 mycoexp = dplyr::filter(table1, scaf == j)
 if (nrow(mycoexp)>0){
@@ -364,33 +380,32 @@ plot.new()
 text(0.5,0.25, "SNP location", cex=2.5)
 ```
 
-![](matrix-eQTL_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+![](matrix-eQTL_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
 
 
 Relationship between number of genes and effect size?
 
 ```r
 par(mfrow=c(1,1), mar=c(7,7,3,3))
-finalsig = dplyr::filter(finalaf, FDR < 0.1) ##only want to look at FDR < 0.1
 
 ##get unique number of genes
-genecounts = dplyr::count(finalsig, gene)
+genecounts = dplyr::count(finalaf, gene)
 nrow(genecounts)
 ```
 
 ```
-## [1] 2310
+## [1] 2341
 ```
 
 ```r
 ## get number of genes per snp
-snpcounts = dplyr::count(finalsig, snps)
+snpcounts = dplyr::count(finalaf, snps)
 summary(snpcounts$n)
 ```
 
 ```
 ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-##   1.000   1.000   1.000   1.119   1.000  93.000
+##    1.00    1.00    1.00    1.14    1.00   93.00
 ```
 
 ```r
@@ -398,7 +413,7 @@ nrow(snpcounts) #total number of snps with at least one association
 ```
 
 ```
-## [1] 4971
+## [1] 5468
 ```
 
 ```r
@@ -406,7 +421,7 @@ nrow(dplyr::filter(snpcounts, n>1)) #snps with >1 association
 ```
 
 ```
-## [1] 356
+## [1] 489
 ```
 
 ```r
@@ -415,13 +430,14 @@ hist(snpcounts$n, col = "darkgray", border="white", xlab = "# of genes associate
 hist(snpcounts$n, col = "darkgray", border="white", xlab = "# of genes associated with each snp", main="", breaks=seq(0,100), ylim = c(0,100))
 ```
 
-![](matrix-eQTL_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+![](matrix-eQTL_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
 ```r
 ##compare snps with 1 assoc to snps with >1 assoc
-snpcountsaf = dplyr::left_join(snpcounts, finalsig, by="snps")## get the af in the snp counts table
+snpcountsaf = dplyr::left_join(snpcounts, finalaf, by="snps")## get the af in the snp counts table
+snpcountsaf = dplyr::filter(snpcountsaf, qtldist > 5000) ##transonly
 snpcountsaf = snpcountsaf[!duplicated(snpcountsaf$snps),]#remove duplicates
-onegene = dplyr::filter(snpcountsaf, n == 1)
+onegene = dplyr::filter(snpcountsaf, n == 1) #remove things that are cis only
 moregenes = dplyr::filter(snpcountsaf, n>1)
 
 t.test(onegene$af, moregenes$af)
@@ -432,13 +448,13 @@ t.test(onegene$af, moregenes$af)
 ## 	Welch Two Sample t-test
 ## 
 ## data:  onegene$af and moregenes$af
-## t = 3.9827, df = 402.85, p-value = 8.083e-05
+## t = 2.6187, df = 571.45, p-value = 0.009061
 ## alternative hypothesis: true difference in means is not equal to 0
 ## 95 percent confidence interval:
-##  0.01422754 0.04196308
+##  0.00457208 0.03200982
 ## sample estimates:
 ## mean of x mean of y 
-## 0.2543185 0.2262232
+## 0.2143493 0.1960583
 ```
 
 ```r
@@ -448,7 +464,25 @@ mtext('MAF',2, line=5, cex=2)
 axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
 points(c(1,2), c(mean(onegene$af, na.rm=T), mean(moregenes$af, na.rm=T)), cex=3, pch=16)
 
-###what if we remove the one with 93 associations?
+cor.test(snpcountsaf$n, snpcountsaf$af)
 ```
 
-![](matrix-eQTL_files/figure-html/unnamed-chunk-7-2.png)<!-- -->
+```
+## 
+## 	Pearson's product-moment correlation
+## 
+## data:  snpcountsaf$n and snpcountsaf$af
+## t = 0.45515, df = 1967, p-value = 0.6491
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  -0.03392810  0.05441201
+## sample estimates:
+##        cor 
+## 0.01026198
+```
+
+![](matrix-eQTL_files/figure-html/unnamed-chunk-8-2.png)<!-- -->
+
+
+
+
