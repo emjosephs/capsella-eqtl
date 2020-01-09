@@ -31,8 +31,11 @@ myexp0$RNA[53] <- '161A'
 ## batch effects
 #coltiming = read.table('data/coltiming', stringsAsFactors = F, header=T)
 coltiming = read.table('data/coltiming2.txt', stringsAsFactors = F, header=T)
+coltiming$ID = as.character(coltiming$ID)
+myexp0$ID = sapply(row.names(myexp0), function(x){substr(x,2,nchar(x)-1)}) ##add in a column with the RNA name
 
-mymer = dplyr::inner_join(coltiming, myexp0, by="RNA")
+#mymer = dplyr::inner_join(coltiming, myexp0, by="RNA")
+mymer = dplyr::inner_join(coltiming, myexp0, by="ID")
 
 ## just the 146 individuals
 my146 = read.table('data/146_DNA_names_forplink', header=F, stringsAsFactors = F)
