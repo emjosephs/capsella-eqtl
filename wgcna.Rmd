@@ -16,6 +16,10 @@ library('sva')
 
 ### Adjusted expression data for batch effect (collection timing)
 ```{r}
+
+
+
+
 myexp = read.table('data/all.med.min5', header=T)
 myexp0 = as.data.frame(t(myexp[,-1]))
 names(myexp0) = myexp$pac
@@ -25,14 +29,16 @@ myexp0$RNA[53] <- '161A'
 
 
 ## batch effects
-coltiming = read.table('data/coltiming', stringsAsFactors = F, header=T)
+#coltiming = read.table('data/coltiming', stringsAsFactors = F, header=T)
+coltiming = read.table('data/coltiming2.txt', stringsAsFactors = F, header=T)
+
 mymer = dplyr::inner_join(coltiming, myexp0, by="RNA")
 
 ## just the 146 individuals
 my146 = read.table('data/146_DNA_names_forplink', header=F, stringsAsFactors = F)
 mymer2 = dplyr::inner_join(my146, mymer, by = c('V2'='DNA_vcfname'))
 
-write.table(mymer2$V2, file="data/wgcna-files/mycb-names")
+#write.table(mymer2$V2, file="data/wgcna-files/mycb-names")
 
 # adjust for batch effects
 #mycb = ComBat(dat = t(mymer2[,-c(1:5)]), batch = mymer2$timeindex)
@@ -41,6 +47,7 @@ write.table(mymer2$V2, file="data/wgcna-files/mycb-names")
 
 
 ```
+
 
 ### Ran WGCNA on HPCC. Code is below:
 
