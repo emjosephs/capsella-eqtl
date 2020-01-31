@@ -281,17 +281,6 @@ t.test(ciseqtls$af, transeqtls$af)$p.value
 ```
 
 ```r
-par(mar=c(7,7,2,2), mfrow=c(1,1))
-plot(jitter(c(rep(1, nrow(ciseqtls)), rep(2, nrow(transeqtls)))), c(ciseqtls$af, transeqtls$af), bty="n", xlim = c(0.5,2.5), xaxt="n", yaxt = "n", col = "gray", xlab = "", ylab = "")
-axis(2, las=2, cex.axis=2)
-mtext('MAF',2, line=5, cex=2)
-axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
-points(c(1,2), c(mean(ciseqtls$af, na.rm=T), mean(transeqtls$af, na.rm=T)), cex=3, pch=16)
-```
-
-![](matrix-eQTL_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
-
-```r
 ##driven by the hotspot? remove duplicates from the trans
 transunique = transeqtls[!duplicated(transeqtls$rs),]
 dim(transunique)
@@ -337,11 +326,185 @@ axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
 points(c(1,2), c(mean(cisunique$af, na.rm=T), mean(transunique$af, na.rm=T)), cex=3, pch=16)
 ```
 
+![](matrix-eQTL_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+
+```r
+par(mfrow=c(2,1))
+hist(cisunique$af, xlim = c(0,1), col = "darkgray", border="white", breaks=seq(0,1,.025), main="", xlab = "cis MAF", freq=T)
+hist(transunique$af, xlim = c(0,1), col = "darkgray", border="white", breaks = seq(0,1,0.025), main="", xlab ="trans MAF", freq=T)
+```
+
 ![](matrix-eQTL_files/figure-html/unnamed-chunk-6-2.png)<!-- -->
+
+```r
+### how robust is it to our cis/trans cutoff?
+
+### with distance of 1000
+ciseqtls1000 = dplyr::filter(finalaf, qtldist < 1000, FDR < 0.1)
+transeqtls1000 = dplyr::filter(finalaf, qtldist > 1000, FDR < 0.1)
+transunique1000 = transeqtls1000[!duplicated(transeqtls1000$rs),]
+cisunique1000 = ciseqtls1000[!duplicated(ciseqtls1000$rs),]
+t.test(cisunique1000$af, transunique1000$af) ## c
+```
+
+```
+## 
+## 	Welch Two Sample t-test
+## 
+## data:  cisunique1000$af and transunique1000$af
+## t = 14.626, df = 5278.1, p-value < 2.2e-16
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  0.04388721 0.05747355
+## sample estimates:
+## mean of x mean of y 
+## 0.2769975 0.2263172
+```
+
+```r
+## distance of 2500
+ciseqtls2500 = dplyr::filter(finalaf, qtldist < 2500, FDR < 0.1)
+transeqtls2500 = dplyr::filter(finalaf, qtldist > 2500, FDR < 0.1)
+transunique2500 = transeqtls2500[!duplicated(transeqtls2500$rs),]
+cisunique2500 = ciseqtls2500[!duplicated(ciseqtls2500$rs),]
+t.test(cisunique2500$af, transunique2500$af) ## c
+```
+
+```
+## 
+## 	Welch Two Sample t-test
+## 
+## data:  cisunique2500$af and transunique2500$af
+## t = 15.722, df = 5065.5, p-value < 2.2e-16
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  0.04775797 0.06136463
+## sample estimates:
+## mean of x mean of y 
+## 0.2708454 0.2162841
+```
+
+```r
+## distance of 10000
+ciseqtls10000 = dplyr::filter(finalaf, qtldist < 10000, FDR < 0.1)
+transeqtls10000 = dplyr::filter(finalaf, qtldist > 10000, FDR < 0.1)
+transunique10000 = transeqtls10000[!duplicated(transeqtls10000$rs),]
+cisunique10000 = ciseqtls10000[!duplicated(ciseqtls10000$rs),]
+t.test(cisunique10000$af, transunique10000$af) ## c
+```
+
+```
+## 
+## 	Welch Two Sample t-test
+## 
+## data:  cisunique10000$af and transunique10000$af
+## t = 16.537, df = 3247.7, p-value < 2.2e-16
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  0.05411686 0.06867560
+## sample estimates:
+## mean of x mean of y 
+## 0.2669558 0.2055596
+```
 
 ```r
 save('finalaf', file = "data/allbyall.rda")
 ```
+
+Are allele frequencies different within large effect eQTL only?
+
+```r
+summary(abs(finalaf$beta))
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##  0.5663  0.7424  0.8809  0.9541  1.1046  2.4590
+```
+
+```r
+ciseqtlslarge = dplyr::filter(finalaf, qtldist < 5000, FDR < 0.1, abs(beta) > summary(abs(finalaf$beta))[5]) ## only looking at top quartile of effect size
+nrow(ciseqtlslarge)
+```
+
+```
+## [1] 721
+```
+
+```r
+transeqtlslarge = dplyr::filter(finalaf, qtldist > 5000, FDR < 0.1, abs(beta) > summary(abs(finalaf$beta))[5])
+nrow(transeqtlslarge)
+```
+
+```
+## [1] 837
+```
+
+```r
+##remove duplicates
+transuniquelarge = transeqtlslarge[!duplicated(transeqtlslarge$rs),]
+dim(transuniquelarge)
+```
+
+```
+## [1] 692  17
+```
+
+```r
+cisuniquelarge = ciseqtlslarge[!duplicated(ciseqtlslarge$rs),]
+dim(cisuniquelarge)
+```
+
+```
+## [1] 684  17
+```
+
+```r
+t.test(ciseqtlslarge$af,transeqtlslarge$af)
+```
+
+```
+## 
+## 	Welch Two Sample t-test
+## 
+## data:  ciseqtlslarge$af and transeqtlslarge$af
+## t = 5.5458, df = 1335.3, p-value = 3.524e-08
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  0.01060059 0.02220522
+## sample estimates:
+##  mean of x  mean of y 
+## 0.11409484 0.09769193
+```
+
+```r
+t.test(cisuniquelarge$af,transuniquelarge$af)
+```
+
+```
+## 
+## 	Welch Two Sample t-test
+## 
+## data:  cisuniquelarge$af and transuniquelarge$af
+## t = 5.4179, df = 1286.4, p-value = 7.19e-08
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  0.01094275 0.02336568
+## sample estimates:
+##  mean of x  mean of y 
+## 0.11475037 0.09759615
+```
+
+There's a negative correlation between MAF and effect size, either due to selection or detection power/winner's curse
+
+
+```r
+par(mfrow=c(1,1))
+plot(finalaf$af, abs(finalaf$beta), bty="n", xlab = "MAF", ylab = "abs(beta)", col = "darkgray")
+```
+
+![](matrix-eQTL_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+
 
 Remake the plot of all eQTLs but add in the coexpression eqtls
 
@@ -380,7 +543,7 @@ plot.new()
 text(0.5,0.25, "SNP location", cex=2.5)
 ```
 
-![](matrix-eQTL_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+![](matrix-eQTL_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
 
 
 Relationship between number of genes and effect size?
@@ -427,19 +590,34 @@ nrow(dplyr::filter(snpcounts, n>1)) #snps with >1 association
 ```r
 par(mfrow=c(2,1))
 hist(snpcounts$n, col = "darkgray", border="white", xlab = "# of genes associated with each snp", main="", breaks=seq(0,100))
-hist(snpcounts$n, col = "darkgray", border="white", xlab = "# of genes associated with each snp", main="", breaks=seq(0,100), ylim = c(0,100))
+hist(snpcounts$n, col = "darkgray", border="white", xlab = "# of genes associated with each snp", main="", breaks=seq(0,100), ylim = c(0,100), xlim = c(0,20))
 ```
 
-![](matrix-eQTL_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+![](matrix-eQTL_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
 
 ```r
 ##compare snps with 1 assoc to snps with >1 assoc
 snpcountsaf = dplyr::left_join(snpcounts, finalaf, by="snps")## get the af in the snp counts table
-snpcountsaf = dplyr::filter(snpcountsaf, qtldist > 5000) ##transonly
+snpcountsaf = dplyr::filter(snpcountsaf, qtldist > 5000) ##transonly to make sure not a weird cis-trans issue
 snpcountsaf = snpcountsaf[!duplicated(snpcountsaf$snps),]#remove duplicates
-onegene = dplyr::filter(snpcountsaf, n == 1) #remove things that are cis only
-moregenes = dplyr::filter(snpcountsaf, n>1)
+onegene = dplyr::filter(snpcountsaf, n == 1) #
+nrow(onegene)
+```
 
+```
+## [1] 1635
+```
+
+```r
+moregenes = dplyr::filter(snpcountsaf, n>1)
+nrow(moregenes)
+```
+
+```
+## [1] 376
+```
+
+```r
 t.test(onegene$af, moregenes$af)
 ```
 
@@ -458,30 +636,24 @@ t.test(onegene$af, moregenes$af)
 ```
 
 ```r
+par(mfrow=c(2,1))
+hist(onegene$af, col = "darkgray", border="white", xlab = "MAF of eQTLs with one association", main="", breaks=seq(0,1, 0.01))
+hist(moregenes$af, col = "darkgray", border="white", xlab = "MAF of eQTLs with >1 association", main="", breaks=seq(0,1, 0.01))
+```
+
+![](matrix-eQTL_files/figure-html/unnamed-chunk-10-2.png)<!-- -->
+
+```r
 plot(jitter(c(rep(1, nrow(onegene)), rep(2, nrow(moregenes)))), c(onegene$af, moregenes$af), bty="n", xlim = c(0.5,2.5), xaxt="n", yaxt = "n", col = "gray", xlab = "", ylab = "")
 axis(2, las=2, cex.axis=2)
 mtext('MAF',2, line=5, cex=2)
 axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
 points(c(1,2), c(mean(onegene$af, na.rm=T), mean(moregenes$af, na.rm=T)), cex=3, pch=16)
-
-cor.test(snpcountsaf$n, snpcountsaf$af)
 ```
 
-```
-## 
-## 	Pearson's product-moment correlation
-## 
-## data:  snpcountsaf$n and snpcountsaf$af
-## t = 0.45515, df = 1967, p-value = 0.6491
-## alternative hypothesis: true correlation is not equal to 0
-## 95 percent confidence interval:
-##  -0.03392810  0.05441201
-## sample estimates:
-##        cor 
-## 0.01026198
-```
+![](matrix-eQTL_files/figure-html/unnamed-chunk-10-3.png)<!-- -->
 
-![](matrix-eQTL_files/figure-html/unnamed-chunk-8-2.png)<!-- -->
+Where are the cis and trans eQTLs? (Like what types of sites)
 
 
 

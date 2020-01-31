@@ -202,12 +202,6 @@ t.test(ciseqtls$af, transeqtls$af)
 t.test(ciseqtls$af, transeqtls$af)$p.value
 
 
-par(mar=c(7,7,2,2), mfrow=c(1,1))
-plot(jitter(c(rep(1, nrow(ciseqtls)), rep(2, nrow(transeqtls)))), c(ciseqtls$af, transeqtls$af), bty="n", xlim = c(0.5,2.5), xaxt="n", yaxt = "n", col = "gray", xlab = "", ylab = "")
-axis(2, las=2, cex.axis=2)
-mtext('MAF',2, line=5, cex=2)
-axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
-points(c(1,2), c(mean(ciseqtls$af, na.rm=T), mean(transeqtls$af, na.rm=T)), cex=3, pch=16)
 ##driven by the hotspot? remove duplicates from the trans
 transunique = transeqtls[!duplicated(transeqtls$rs),]
 dim(transunique)
@@ -223,9 +217,65 @@ mtext('MAF',2, line=5, cex=2)
 axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
 points(c(1,2), c(mean(cisunique$af, na.rm=T), mean(transunique$af, na.rm=T)), cex=3, pch=16)
 
+par(mfrow=c(2,1))
+hist(cisunique$af, xlim = c(0,1), col = "darkgray", border="white", breaks=seq(0,1,.025), main="", xlab = "cis MAF", freq=T)
+hist(transunique$af, xlim = c(0,1), col = "darkgray", border="white", breaks = seq(0,1,0.025), main="", xlab ="trans MAF", freq=T)
+
+### how robust is it to our cis/trans cutoff?
+
+### with distance of 1000
+ciseqtls1000 = dplyr::filter(finalaf, qtldist < 1000, FDR < 0.1)
+transeqtls1000 = dplyr::filter(finalaf, qtldist > 1000, FDR < 0.1)
+transunique1000 = transeqtls1000[!duplicated(transeqtls1000$rs),]
+cisunique1000 = ciseqtls1000[!duplicated(ciseqtls1000$rs),]
+t.test(cisunique1000$af, transunique1000$af) ## c
+
+## distance of 2500
+ciseqtls2500 = dplyr::filter(finalaf, qtldist < 2500, FDR < 0.1)
+transeqtls2500 = dplyr::filter(finalaf, qtldist > 2500, FDR < 0.1)
+transunique2500 = transeqtls2500[!duplicated(transeqtls2500$rs),]
+cisunique2500 = ciseqtls2500[!duplicated(ciseqtls2500$rs),]
+t.test(cisunique2500$af, transunique2500$af) ## c
+
+## distance of 10000
+ciseqtls10000 = dplyr::filter(finalaf, qtldist < 10000, FDR < 0.1)
+transeqtls10000 = dplyr::filter(finalaf, qtldist > 10000, FDR < 0.1)
+transunique10000 = transeqtls10000[!duplicated(transeqtls10000$rs),]
+cisunique10000 = ciseqtls10000[!duplicated(ciseqtls10000$rs),]
+t.test(cisunique10000$af, transunique10000$af) ## c
+
 save('finalaf', file = "data/allbyall.rda")
 
 ```
+
+Are allele frequencies different within large effect eQTL only?
+```{r}
+summary(abs(finalaf$beta))
+
+ciseqtlslarge = dplyr::filter(finalaf, qtldist < 5000, FDR < 0.1, abs(beta) > summary(abs(finalaf$beta))[5]) ## only looking at top quartile of effect size
+nrow(ciseqtlslarge)
+transeqtlslarge = dplyr::filter(finalaf, qtldist > 5000, FDR < 0.1, abs(beta) > summary(abs(finalaf$beta))[5])
+nrow(transeqtlslarge)
+
+##remove duplicates
+transuniquelarge = transeqtlslarge[!duplicated(transeqtlslarge$rs),]
+dim(transuniquelarge)
+cisuniquelarge = ciseqtlslarge[!duplicated(ciseqtlslarge$rs),]
+dim(cisuniquelarge)
+
+
+t.test(ciseqtlslarge$af,transeqtlslarge$af)
+t.test(cisuniquelarge$af,transuniquelarge$af)
+```
+
+There's a negative correlation between MAF and effect size, either due to selection or detection power/winner's curse
+
+```{r}
+par(mfrow=c(1,1))
+plot(finalaf$af, abs(finalaf$beta), bty="n", xlab = "MAF", ylab = "abs(beta)", col = "darkgray")
+
+```
+
 
 Remake the plot of all eQTLs but add in the coexpression eqtls
 
@@ -280,17 +330,25 @@ nrow(dplyr::filter(snpcounts, n>1)) #snps with >1 association
 
 par(mfrow=c(2,1))
 hist(snpcounts$n, col = "darkgray", border="white", xlab = "# of genes associated with each snp", main="", breaks=seq(0,100))
-hist(snpcounts$n, col = "darkgray", border="white", xlab = "# of genes associated with each snp", main="", breaks=seq(0,100), ylim = c(0,100))
+hist(snpcounts$n, col = "darkgray", border="white", xlab = "# of genes associated with each snp", main="", breaks=seq(0,100), ylim = c(0,100), xlim = c(0,20))
 
 
 ##compare snps with 1 assoc to snps with >1 assoc
 snpcountsaf = dplyr::left_join(snpcounts, finalaf, by="snps")## get the af in the snp counts table
-snpcountsaf = dplyr::filter(snpcountsaf, qtldist > 5000) ##transonly
+snpcountsaf = dplyr::filter(snpcountsaf, qtldist > 5000) ##transonly to make sure not a weird cis-trans issue
 snpcountsaf = snpcountsaf[!duplicated(snpcountsaf$snps),]#remove duplicates
-onegene = dplyr::filter(snpcountsaf, n == 1) #remove things that are cis only
+onegene = dplyr::filter(snpcountsaf, n == 1) #
+nrow(onegene)
 moregenes = dplyr::filter(snpcountsaf, n>1)
+nrow(moregenes)
 
 t.test(onegene$af, moregenes$af)
+
+
+par(mfrow=c(2,1))
+hist(onegene$af, col = "darkgray", border="white", xlab = "MAF of eQTLs with one association", main="", breaks=seq(0,1, 0.01))
+hist(moregenes$af, col = "darkgray", border="white", xlab = "MAF of eQTLs with >1 association", main="", breaks=seq(0,1, 0.01))
+
 
 plot(jitter(c(rep(1, nrow(onegene)), rep(2, nrow(moregenes)))), c(onegene$af, moregenes$af), bty="n", xlim = c(0.5,2.5), xaxt="n", yaxt = "n", col = "gray", xlab = "", ylab = "")
 axis(2, las=2, cex.axis=2)
@@ -298,11 +356,26 @@ mtext('MAF',2, line=5, cex=2)
 axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
 points(c(1,2), c(mean(onegene$af, na.rm=T), mean(moregenes$af, na.rm=T)), cex=3, pch=16)
 
-cor.test(snpcountsaf$n, snpcountsaf$af)
+
 
 
 ```
 
+Where are the cis and trans eQTLs? (Like what types of sites)
+```{r, eval=F}
+load('data/allbyall.rda')
+system('zcat data/scaf1_8.masked.new.downsampled.NCNC.summary.gz | head -n 25 > data/allbyall-sitetypes.txt')
+
+sapply(1:nrow(finalaf), function(x)
+  {mychr = finalaf$snpchr[x]
+   mysnp = finalaf$snppos[x]
+  #myoutstring = paste("zgrep '",mychr,"*",mysnp,"' data/scaf1_8.masked.new.downsampled.NCNC.summary.gz >> data/allbyall-sitetypes.txt", sep="")
+  myoutstring = paste("zcat data/scaf1_8.masked.new.downsampled.NCNC.summary.gz | awk '$1 == ", '"' , mychr , '"'," && $2 == ",mysnp,"' >> data/allbyall-sitetypes.txt", sep="")
+  system(myoutstring)
+  })
+
+
+```
 
 
 ```{r, eval=F, echo=F}
