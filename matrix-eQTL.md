@@ -655,6 +655,91 @@ points(c(1,2), c(mean(onegene$af, na.rm=T), mean(moregenes$af, na.rm=T)), cex=3,
 
 Where are the cis and trans eQTLs? (Like what types of sites)
 
+```r
+load('data/allbyall.rda')
+system('zcat data/scaf1_8.masked.new.downsampled.NCNC.summary.gz | head -n 25 > data/allbyall-sitetypes.txt')
+
+sapply(1:nrow(finalaf), function(x)
+  {mychr = finalaf$snpchr[x]
+   mysnp = finalaf$snppos[x]
+  #myoutstring = paste("zgrep '",mychr,"*",mysnp,"' data/scaf1_8.masked.new.downsampled.NCNC.summary.gz >> data/allbyall-sitetypes.txt", sep="")
+  myoutstring = paste("zcat data/scaf1_8.masked.new.downsampled.NCNC.summary.gz | awk '$1 == ", '"' , mychr , '"'," && $2 == ",mysnp,"' >> data/allbyall-sitetypes.txt", sep="")
+  system(myoutstring)
+  })
+```
+
+
+
+```r
+mysitetypes = read.table('data/allbyall-sitetypes.txt', header=F, stringsAsFactors = F)
+names(mysitetypes) = strsplit('CHROM POS REF ALT REF_NUMBER ALT_NUMBER TOTAL SITE_TYPE DIVERGENCE', split=" ")[[1]]
+
+
+
+sitetypekey = read.table('data/sitetype-key', header=F, stringsAsFactors = F)
+names(sitetypekey) = c('V1', 'sitename','SITE_TYPE')
+sitetypekey$SITE_TYPE = as.character(sitetypekey$SITE_TYPE)
+
+typemerge = dplyr::left_join(mysitetypes, sitetypekey, by = 'SITE_TYPE')
+typemerge$snps = sapply(1:nrow(typemerge), function(x){paste(typemerge$CHROM[x], typemerge$POS[x], sep=":")})
+
+
+##where are the cis eQTLs?? how many are in the genes they regulate, and are these driving the weird freq distribution
+finaltype = dplyr::left_join(finalaf, typemerge, by="snps")
+```
+
+```
+## Warning: Column `snps` joining factor and character vector, coercing into
+## character vector
+```
+
+```r
+cistype = dplyr::filter(finaltype,qtldist < 5000)
+cistype %>% group_by(sitename) %>% tally  ##of course not clear if exons/0fold/4fold are in the gene itself... 
+```
+
+```
+## # A tibble: 10 x 2
+##    sitename      n
+##    <chr>     <int>
+##  1 0fold       591
+##  2 3utr        151
+##  3 4fold       326
+##  4 5utr        229
+##  5 cnc          13
+##  6 exon        477
+##  7 intergene  1449
+##  8 intron      775
+##  9 stop          2
+## 10 <NA>        272
+```
+
+```r
+## what is the freq distribution of just the intergene/cnc/5utr/intron ones??
+cisnoncoding = dplyr::filter(cistype, sitename %in% c('5utr','3utr','cnc','intergene','intron'))
+
+hist(cisnoncoding$af, xlim = c(0,1), col = "darkgray", border="white", breaks=seq(0,1,.025), main="", xlab = "cis MAF", freq=T)
+```
+
+![](matrix-eQTL_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+
+```r
+hist(dplyr::filter(cistype, sitename == "5utr")$af, xlim = c(0,1), col = "darkgray", border="white", breaks=seq(0,1,.025), main="", xlab = "cis MAF", freq=T)
+```
+
+![](matrix-eQTL_files/figure-html/unnamed-chunk-12-2.png)<!-- -->
+
+```r
+hist(dplyr::filter(cistype, sitename == "intergene")$af, xlim = c(0,1), col = "darkgray", border="white", breaks=seq(0,1,.025), main="", xlab = "cis MAF", freq=T)
+```
+
+![](matrix-eQTL_files/figure-html/unnamed-chunk-12-3.png)<!-- -->
+
+```r
+hist(dplyr::filter(cistype, sitename %in% c('exon','0fold','4fold'))$af, xlim = c(0,1), col = "darkgray", border="white", breaks=seq(0,1,.025), main="", xlab = "cis MAF", freq=T)
+```
+
+![](matrix-eQTL_files/figure-html/unnamed-chunk-12-4.png)<!-- -->
 
 
 
