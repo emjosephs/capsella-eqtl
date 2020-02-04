@@ -452,3 +452,33 @@ text(0.5,0.25, "SNP location", cex=2.5)
 
 
 ```
+
+## How many of the matrix eQTLs overlap with eQTLs from 2015 paper?
+
+```{r}
+oldeqtls = read.table('data/eqtl.kw.nonas.all', header=T, stringsAsFactors = F)
+oldeqtls$rs = sapply(1:nrow (oldeqtls), function(x){
+  paste('scaffold_',substr(oldeqtls$scaf[x], 5, 100),':',oldeqtls$locus[x], sep="")
+  })
+
+oldmer = dplyr::left_join(ciseqtls, oldeqtls, by="rs") %>% dplyr::filter(pac == gene)
+
+
+plot(-log10(oldmer$p), -log10(oldmer$pvalue), bty="n", xlab = "Josephs 2015 -log10(p)", ylab = "matrix eqtl -log10(p)")
+
+
+##how many of the matrix eqtls are also Josephs 2015 eqtls?
+nrow(oldmer) ##number of matrix cis eqtls with matches
+nrow(dplyr::filter(oldmer, p < 0.05))
+nrow(dplyr::filter(oldmer, p <  8.2e-4)) ##cutoff from paper
+
+
+
+aseqtls = read.table('data/eqtl.ase.out.all', header=T, stringsAsFactors = F)
+aseqtls$rs = sapply(1:nrow (aseqtls), function(x){
+  paste('scaffold_',substr(aseqtls$scaf[x], 5, 100),':',aseqtls$locus[x], sep="")
+  })
+
+asemer = dplyr::left_join(ciseqtls, aseqtls, by="rs") %>% dplyr::filter(pac == gene)
+
+```
