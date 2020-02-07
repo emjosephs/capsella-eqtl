@@ -10,6 +10,9 @@ output:
 
 
 
+### Get overlap between diversity data and eQTLs
+
+
 ```r
 ##read in the diversity data
 div = read.table("data/scall_014diversity_final", stringsAsFactors = F, header=T)
@@ -56,7 +59,6 @@ summary(myhitsdiv$d)
 ##  0.0000  0.0000  0.1183  0.1809  0.2992  0.4872
 ```
 
-Make the figure
 
 
 ```r
@@ -114,7 +116,7 @@ mtext(abc[i], side=3, adj=-0.07, cex=1.3, line=1)
 
 ![](popgen-of-eQTLs_files/figure-html/unnamed-chunk-2-2.png)<!-- -->
 
-Look at sweed results.
+### Match up SweeD results and eQTLs
 
 
 ```r
@@ -141,7 +143,7 @@ axis(2, las=2, cex.axis=1.5, at = c(0:5))
 ![](popgen-of-eQTLs_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
 
 
-Look at pop gen around all-by-all sites
+### Look at pop gen signatures of selection around all-by-all sites
 
 
 ```r
@@ -169,13 +171,13 @@ t.test(transeqtld$pi, ciseqtld$pi)
 ## 	Welch Two Sample t-test
 ## 
 ## data:  transeqtld$pi and ciseqtld$pi
-## t = 1.7321, df = 3942, p-value = 0.08333
+## t = 0.79572, df = 4898.4, p-value = 0.4262
 ## alternative hypothesis: true difference in means is not equal to 0
 ## 95 percent confidence interval:
-##  -7.150721e-05  1.155827e-03
+##  -0.0003346869  0.0007919928
 ## sample estimates:
 ##  mean of x  mean of y 
-## 0.01604556 0.01550340
+## 0.01583074 0.01560209
 ```
 
 ```r
@@ -187,11 +189,11 @@ t.test(transeqtld$tajd, ciseqtld$tajd)
 ## 	Welch Two Sample t-test
 ## 
 ## data:  transeqtld$tajd and ciseqtld$tajd
-## t = -6.2705, df = 4016.8, p-value = 3.98e-10
+## t = -7.4305, df = 4903.2, p-value = 1.269e-13
 ## alternative hypothesis: true difference in means is not equal to 0
 ## 95 percent confidence interval:
-##  -0.18566706 -0.09721853
+##  -0.1987010 -0.1157395
 ## sample estimates:
 ##  mean of x  mean of y 
-## -0.5963226 -0.4548798
+## -0.6023752 -0.4451550
 ```

@@ -9,35 +9,103 @@ output:
 
 
 
-## Get the batch-corrected expression data together for mapping (batch-correction was done in *wgcna.md*)
+##$ Get the batch-corrected expression data together for mapping 
 
 ```r
-load('data/wgcna-files/combatOutput.rda')
+load('data/wgcna-files/combatOutput.rda')  ##(atch-correction was done in wgcna.md
 
-mycbnames = read.table("data/wgcna-files/mycb-names", stringsAsFactors = F)
+mycbnames = read.table("data/wgcna-files/mycb-names", stringsAsFactors = F)  ## get the names of the data files
 
 qn <- function(x){qqnorm(x, plot.it=FALSE)$x}
-# nnormed = data.frame(t(apply(outtable[,-1], 1,qn)))
 normcb = apply(mycb, 1, qn)#quantile normalize, now columns genes, rows are inds
 
 
-mycbdf = data.frame(id = mycbnames$x, normcb, stringsAsFactors = F)
+mycbdf = data.frame(id = mycbnames$x, normcb, stringsAsFactors = F) ##make a data frame of the names and data only
 
-matrixeqtlids = data.frame(V1 = strsplit('10    100    101    102_long    105_clipinplace_sorted    106s_clipped    107    108_3    109    110    111    112    113    114_long    115    117s_clipped    118    11s_clipped    121    123    124_3    125_clipped.bam    126s_clipped    128    129s_clipped    13    131s_clipped    132    133    135    136    137s_clipped    138    139    140    141    142    143s_clipped    144s_clipped    147    148    14_clipped.bam    15    151    152    153    154    155_clipped.bam    156    157    158    160    161_clipped.bam    162    163_clipped    165_clipped.bam    167    16_clipped    17    170_clipped    174_clipped.bam    175_clipped    176    177    178    18    181    182_3    183    184_3    186    187    189    190    192    193    194    195    197    198    1_clipped    20    200    202_long    203_long    204_long    23s_clipped    24    25    26    27    28    29_clipped    30    31    33    34    35    36    38    39s_clipped    41    43s_clipped    44s_clipped    47    49_clipped.bam    4s_clipped    50_long    52    54_clipped    55_clipped    58    5_clipped    61    63    64_replacement    65_clipped    66_clipped    67    70s_clipped    71    72    74    75    76    78s_clipped    79    7s_clipped    8    80s_clipped    81s_clipped    82s_clipped    83    85_long    86    89    9    91    92    93    94    95    96    97_3    98_clipped    99_clipped', split = "    ")[[1]], stringsAsFactors = F)
-
+matrixeqtlids = data.frame(V1 = strsplit('10    100    101    102_long    105_clipinplace_sorted    106s_clipped    107    108_3    109    110    111    112    113    114_long    115    117s_clipped    118    11s_clipped    121    123    124_3    125_clipped.bam    126s_clipped    128    129s_clipped    13    131s_clipped    132    133    135    136    137s_clipped    138    139    140    141    142    143s_clipped    144s_clipped    147    148    14_clipped.bam    15    151    152    153    154    155_clipped.bam    156    157    158    160    161_clipped.bam    162    163_clipped    165_clipped.bam    167    16_clipped    17    170_clipped    174_clipped.bam    175_clipped    176    177    178    18    181    182_3    183    184_3    186    187    189    190    192    193    194    195    197    198    1_clipped    20    200    202_long    203_long    204_long    23s_clipped    24    25    26    27    28    29_clipped    30    31    33    34    35    36    38    39s_clipped    41    43s_clipped    44s_clipped    47    49_clipped.bam    4s_clipped    50_long    52    54_clipped    55_clipped    58    5_clipped    61    63    64_replacement    65_clipped    66_clipped    67    70s_clipped    71    72    74    75    76    78s_clipped    79    7s_clipped    8    80s_clipped    81s_clipped    82s_clipped    83    85_long    86    89    9    91    92    93    94    95    96    97_3    98_clipped    99_clipped', split = "    ")[[1]], stringsAsFactors = F) ##add in individual labels
 
 
 meExp = data.frame(c('id', row.names(mycb)),t(dplyr::left_join(matrixeqtlids, mycbdf, by = c('V1'='id'))), stringsAsFactors = F)
-write.table(meExp, file = 'data/matrixeqtl-files/cbExp', row.names=F, quote=F, col.names=F)
+write.table(meExp, file = 'data/matrixeqtl-files/cbExp', row.names=F, quote=F, col.names=F)  ##save the table of expression data
+```
+
+### Run matrix eQTL
+
+```r
+library("MatrixEQTL")
+
+
+output_file_name = tempfile();
+
+# Only associations significant at this level will be saved
+pvOutputThreshold = 1e-6;
+
+
+
+# Error covariance matrix
+# Set to numeric() for identity.
+errorCovariance = numeric();
+# errorCovariance = read.table("Sample_Data/errorCovariance.txt");
+useModel = modelLINEAR; # modelANOVA, modelLINEAR, or modelLINEAR_CROSS
+
+
+# SNPS -- may need to go back and remove snps that don't ahve expression data. maybe not
+snps = SlicedData$new();
+snps$fileDelimiter = "";      # the TAB character
+snps$fileOmitCharacters = "-1"; # denote missing values;
+snps$fileSkipRows = 1;          # one row of column labels
+snps$fileSkipColumns = 1;       # one column of row labels
+snps$fileSliceSize = 2000;      # read file in slices of 2,000 rows
+snps$LoadFile('../data/146_tagsnps_transposed')
+
+## expression data
+gene = SlicedData$new();
+gene$fileDelimiter = "";      # the TAB character
+gene$fileOmitCharacters = "NA"; # denote missing values;
+gene$fileSkipRows = 1;          # one row of column labels
+gene$fileSkipColumns = 1;       # one column of row labels
+gene$fileSliceSize = 2000;      # read file in slices of 2,000 rows
+#gene$LoadFile('../data/all.med.nomin.formatrixeqtl');
+gene$LoadFile('../data/cbExp');
+
+covariates_file_name = '../data/pccovars.foreqtl'
+cvrt = SlicedData$new();
+cvrt$fileDelimiter = "";      # the TAB character
+cvrt$fileOmitCharacters = "NA"; # denote missing values;
+cvrt$fileSkipRows = 1;          # one row of column labels
+cvrt$fileSkipColumns = 1;       # one column of row labels
+if(length(covariates_file_name)>0) {
+  cvrt$LoadFile(covariates_file_name);
+}
+
+
+
+meCovar = Matrix_eQTL_engine(
+snps = snps,
+gene = gene,
+cvrt = cvrt,
+output_file_name = output_file_name,
+pvOutputThreshold = pvOutputThreshold,
+useModel = useModel, 
+errorCovariance = errorCovariance, 
+verbose = TRUE,
+#pvalue.hist=TRUE,
+pvalue.hist = 'qqplot',
+min.pv.by.genesnp = FALSE,
+noFDRsaveMemory = FALSE);
+
+unlink(output_file_name);
+
+
+save(meCovar, file="matrixeqtl-batched.rda")
 ```
 
 
-
-
+### Look at eQTL data and plot out locations
 
 ```r
 load('data/matrixeqtl-files/matrixeqtl-batched.rda')
-plot(meCovar)
+plot(meCovar) ##qq plot
 ```
 
 ![](matrix-eQTL_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
@@ -51,7 +119,7 @@ meCovar$all$ntests
 ```
 
 ```r
-eqtls = dplyr::filter(meCovar$all$eqtls, FDR < 0.1)
+eqtls = dplyr::filter(meCovar$all$eqtls, FDR < 0.1) ##select significant eQTLs
 
 geneloc = read.table('data/matrixeqtl-files/genelocation.matrixeqtl', header=T, stringsAsFactors = F)
 geneloc$gene = as.character(geneloc$geneid)
@@ -117,6 +185,7 @@ nrow(finalset)
 ```
 
 ```r
+## plot out the locations of the eQTLs
 #postscript("figures/eqtls-pcs.eps",height=9,width=9,paper="special",horizontal=FALSE,colormodel="cymk")
 par(mfrow=c(8,8), mar=c(0,0,0,0))
 par(mar=c(0,0,0,0))
@@ -144,7 +213,7 @@ text(0.5,0.25, "SNP location", cex=2.5)
 
 
 
-Cis vs trans effect sizes?
+### Compare cis and trans effect sizes
 
 ```r
 ### get the distances of eqtls from the gene
@@ -240,15 +309,11 @@ hist(abs(transeqtls$beta), xlim = c(0,3), col = "darkgray", border="white", brea
 ![](matrix-eQTL_files/figure-html/unnamed-chunk-4-4.png)<!-- -->
 
 
-
-
-
-
-Compare allele freqs of cis and trans
+### Compare minor allele frequencies of cis and trans eQTLs
 
 ```r
 finalset$rs = as.character(finalset$snps)
-mygemma = read.table('data/gemma-files/tb.16.assoc.txt', header=T, stringsAsFactors=F)##read in mafs from a gemma file
+mygemma = read.table('data/gemma-files/tb.16.assoc.txt', header=T, stringsAsFactors=F) ##read in mafs from a gemma file
 finalaf = dplyr::left_join(finalset, mygemma[,c(2,5,6,7)], by = 'rs')
 
 ciseqtls = dplyr::filter(finalaf, qtldist < 5000, FDR < 0.1)
@@ -326,7 +391,7 @@ axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
 points(c(1,2), c(mean(cisunique$af, na.rm=T), mean(transunique$af, na.rm=T)), cex=3, pch=16)
 ```
 
-![](matrix-eQTL_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+![](matrix-eQTL_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
 
 ```r
 par(mfrow=c(2,1))
@@ -334,7 +399,7 @@ hist(cisunique$af, xlim = c(0,1), col = "darkgray", border="white", breaks=seq(0
 hist(transunique$af, xlim = c(0,1), col = "darkgray", border="white", breaks = seq(0,1,0.025), main="", xlab ="trans MAF", freq=T)
 ```
 
-![](matrix-eQTL_files/figure-html/unnamed-chunk-6-2.png)<!-- -->
+![](matrix-eQTL_files/figure-html/unnamed-chunk-5-2.png)<!-- -->
 
 ```r
 ### how robust is it to our cis/trans cutoff?
@@ -411,7 +476,7 @@ t.test(cisunique10000$af, transunique10000$af) ## c
 save('finalaf', file = "data/allbyall.rda")
 ```
 
-Are allele frequencies different within large effect eQTL only?
+### Are allele frequencies different within large effect eQTL only?
 
 ```r
 summary(abs(finalaf$beta))
@@ -495,18 +560,8 @@ t.test(cisuniquelarge$af,transuniquelarge$af)
 ## 0.11475037 0.09759615
 ```
 
-There's a negative correlation between MAF and effect size, either due to selection or detection power/winner's curse
 
-
-```r
-par(mfrow=c(1,1))
-plot(finalaf$af, abs(finalaf$beta), bty="n", xlab = "MAF", ylab = "abs(beta)", col = "darkgray")
-```
-
-![](matrix-eQTL_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
-
-
-Remake the plot of all eQTLs but add in the coexpression eqtls
+### Remake the plot of all eQTLs but add in the coexpression eqtls
 
 
 ```r
@@ -543,10 +598,10 @@ plot.new()
 text(0.5,0.25, "SNP location", cex=2.5)
 ```
 
-![](matrix-eQTL_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+![](matrix-eQTL_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
 
 
-Relationship between number of genes and effect size?
+### Testing for a relationship between number of genes and effect size
 
 ```r
 par(mfrow=c(1,1), mar=c(7,7,3,3))
@@ -593,7 +648,7 @@ hist(snpcounts$n, col = "darkgray", border="white", xlab = "# of genes associate
 hist(snpcounts$n, col = "darkgray", border="white", xlab = "# of genes associated with each snp", main="", breaks=seq(0,100), ylim = c(0,100), xlim = c(0,20))
 ```
 
-![](matrix-eQTL_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+![](matrix-eQTL_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
 ```r
 ##compare snps with 1 assoc to snps with >1 assoc
@@ -641,7 +696,7 @@ hist(onegene$af, col = "darkgray", border="white", xlab = "MAF of eQTLs with one
 hist(moregenes$af, col = "darkgray", border="white", xlab = "MAF of eQTLs with >1 association", main="", breaks=seq(0,1, 0.01))
 ```
 
-![](matrix-eQTL_files/figure-html/unnamed-chunk-10-2.png)<!-- -->
+![](matrix-eQTL_files/figure-html/unnamed-chunk-8-2.png)<!-- -->
 
 ```r
 plot(jitter(c(rep(1, nrow(onegene)), rep(2, nrow(moregenes)))), c(onegene$af, moregenes$af), bty="n", xlim = c(0.5,2.5), xaxt="n", yaxt = "n", col = "gray", xlab = "", ylab = "")
@@ -651,100 +706,10 @@ axis(1,at = c(1,2), lab = c('cis','trans'), cex.axis=2)
 points(c(1,2), c(mean(onegene$af, na.rm=T), mean(moregenes$af, na.rm=T)), cex=3, pch=16)
 ```
 
-![](matrix-eQTL_files/figure-html/unnamed-chunk-10-3.png)<!-- -->
-
-Where are the cis and trans eQTLs? (Like what types of sites)
-
-```r
-load('data/allbyall.rda')
-system('zcat data/scaf1_8.masked.new.downsampled.NCNC.summary.gz | head -n 25 > data/allbyall-sitetypes.txt')
-
-sapply(1:nrow(finalaf), function(x)
-  {mychr = finalaf$snpchr[x]
-   mysnp = finalaf$snppos[x]
-  #myoutstring = paste("zgrep '",mychr,"*",mysnp,"' data/scaf1_8.masked.new.downsampled.NCNC.summary.gz >> data/allbyall-sitetypes.txt", sep="")
-  myoutstring = paste("zcat data/scaf1_8.masked.new.downsampled.NCNC.summary.gz | awk '$1 == ", '"' , mychr , '"'," && $2 == ",mysnp,"' >> data/allbyall-sitetypes.txt", sep="")
-  system(myoutstring)
-  })
-```
+![](matrix-eQTL_files/figure-html/unnamed-chunk-8-3.png)<!-- -->
 
 
-
-```r
-mysitetypes = read.table('data/allbyall-sitetypes.txt', header=F, stringsAsFactors = F)
-names(mysitetypes) = strsplit('CHROM POS REF ALT REF_NUMBER ALT_NUMBER TOTAL SITE_TYPE DIVERGENCE', split=" ")[[1]]
-
-
-
-sitetypekey = read.table('data/sitetype-key', header=F, stringsAsFactors = F)
-names(sitetypekey) = c('V1', 'sitename','SITE_TYPE')
-sitetypekey$SITE_TYPE = as.character(sitetypekey$SITE_TYPE)
-
-typemerge = dplyr::left_join(mysitetypes, sitetypekey, by = 'SITE_TYPE')
-typemerge$snps = sapply(1:nrow(typemerge), function(x){paste(typemerge$CHROM[x], typemerge$POS[x], sep=":")})
-
-
-##where are the cis eQTLs?? how many are in the genes they regulate, and are these driving the weird freq distribution
-finaltype = dplyr::left_join(finalaf, typemerge, by="snps")
-```
-
-```
-## Warning: Column `snps` joining factor and character vector, coercing into
-## character vector
-```
-
-```r
-cistype = dplyr::filter(finaltype,qtldist < 5000)
-cistype %>% group_by(sitename) %>% tally  ##of course not clear if exons/0fold/4fold are in the gene itself... 
-```
-
-```
-## # A tibble: 10 x 2
-##    sitename      n
-##    <chr>     <int>
-##  1 0fold       591
-##  2 3utr        151
-##  3 4fold       326
-##  4 5utr        229
-##  5 cnc          13
-##  6 exon        477
-##  7 intergene  1449
-##  8 intron      775
-##  9 stop          2
-## 10 <NA>        272
-```
-
-```r
-## what is the freq distribution of just the intergene/cnc/5utr/intron ones??
-cisnoncoding = dplyr::filter(cistype, sitename %in% c('5utr','3utr','cnc','intergene','intron'))
-
-hist(cisnoncoding$af, xlim = c(0,1), col = "darkgray", border="white", breaks=seq(0,1,.025), main="", xlab = "cis MAF", freq=T)
-```
-
-![](matrix-eQTL_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
-
-```r
-hist(dplyr::filter(cistype, sitename == "5utr")$af, xlim = c(0,1), col = "darkgray", border="white", breaks=seq(0,1,.025), main="", xlab = "cis MAF", freq=T)
-```
-
-![](matrix-eQTL_files/figure-html/unnamed-chunk-12-2.png)<!-- -->
-
-```r
-hist(dplyr::filter(cistype, sitename == "intergene")$af, xlim = c(0,1), col = "darkgray", border="white", breaks=seq(0,1,.025), main="", xlab = "cis MAF", freq=T)
-```
-
-![](matrix-eQTL_files/figure-html/unnamed-chunk-12-3.png)<!-- -->
-
-```r
-hist(dplyr::filter(cistype, sitename %in% c('exon','0fold','4fold'))$af, xlim = c(0,1), col = "darkgray", border="white", breaks=seq(0,1,.025), main="", xlab = "cis MAF", freq=T)
-```
-
-![](matrix-eQTL_files/figure-html/unnamed-chunk-12-4.png)<!-- -->
-
-
-
-
-## How many of the matrix eQTLs overlap with eQTLs from 2015 paper?
+### How many of the matrix eQTLs overlap with eQTLs from 2015 paper?
 
 
 ```r
@@ -759,7 +724,7 @@ oldmer = dplyr::left_join(ciseqtls, oldeqtls, by="rs") %>% dplyr::filter(pac == 
 plot(-log10(oldmer$p), -log10(oldmer$pvalue), bty="n", xlab = "Josephs 2015 -log10(p)", ylab = "matrix eqtl -log10(p)")
 ```
 
-![](matrix-eQTL_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+![](matrix-eQTL_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
 
 ```r
 ##how many of the matrix eqtls are also Josephs 2015 eqtls?
@@ -793,27 +758,4 @@ aseqtls$rs = sapply(1:nrow (aseqtls), function(x){
   })
 
 asemer = dplyr::left_join(ciseqtls, aseqtls, by="rs") %>% dplyr::filter(pac == gene)
-
-##how many are cis eQTLs (using ASE measure)
-nrow(asemer)
-```
-
-```
-## [1] 2374
-```
-
-```r
-nrow(dplyr::filter(asemer, p.ase < 0.05))
-```
-
-```
-## [1] 1372
-```
-
-```r
-nrow(dplyr::filter(asemer, ase_hom < ase_het))
-```
-
-```
-## [1] 1996
 ```

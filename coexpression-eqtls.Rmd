@@ -26,8 +26,6 @@ plink --noweb --file ../data/gemma/tags146 --make-bed --out ../data/gemma/tags14
 ```
 
 
-
-
 Make the fam file for gemma:
 ```{r, eval=F}
 load('data/wgcna-files/PlantSigned-networkConstructionEM-stepByStep.RData')
@@ -80,7 +78,7 @@ rsync -ave ssh josep993@rsync.hpcc.msu.edu:trans-eQTL/data/gemma/batched-tags/*t
 
 ```
 
-Look at the results
+### Look at the results
 ```{r}
 
 
@@ -96,8 +94,6 @@ sighits = dplyr::filter(allhits, fdr < 0.1)
 sighits
 ```
 
-
-Where are the sighnificant hits? Make manhattan plots.
 
 
 First need to pull out the regions around hits from the gemma output files
@@ -252,16 +248,5 @@ eqtlGene = dplyr::filter(modulelocs, V1 == paste('scaffold_',x$chr,sep=""), V4 <
 eqtlGene
 ```
 
-PTHR10579
-PANTHER
-CALCIUM-ACTIVATED CHLORIDE CHANNEL REGULATOR
-PTHR10579:SF59
-PANTHER
-C3H4 TYPE ZINC FINGER PROTEIN-RELATED
-
-	
-AT5G65683.1
-
-Title: The WAVY GROWTH 3 E3 ligase family controls the gravitropic response in Arabidopsis roots
 
 
