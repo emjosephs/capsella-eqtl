@@ -9,7 +9,7 @@ output:
 
 
 
-##Get the batch-corrected expression data together for mapping
+## Get the batch-corrected expression data together for mapping (batch-correction was done in *wgcna.md*)
 
 ```r
 load('data/wgcna-files/combatOutput.rda')
@@ -743,3 +743,77 @@ hist(dplyr::filter(cistype, sitename %in% c('exon','0fold','4fold'))$af, xlim = 
 
 
 
+
+## How many of the matrix eQTLs overlap with eQTLs from 2015 paper?
+
+
+```r
+oldeqtls = read.table('data/eqtl.kw.nonas.all', header=T, stringsAsFactors = F)
+oldeqtls$rs = sapply(1:nrow (oldeqtls), function(x){
+  paste('scaffold_',substr(oldeqtls$scaf[x], 5, 100),':',oldeqtls$locus[x], sep="")
+  })
+
+oldmer = dplyr::left_join(ciseqtls, oldeqtls, by="rs") %>% dplyr::filter(pac == gene)
+
+
+plot(-log10(oldmer$p), -log10(oldmer$pvalue), bty="n", xlab = "Josephs 2015 -log10(p)", ylab = "matrix eqtl -log10(p)")
+```
+
+![](matrix-eQTL_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+
+```r
+##how many of the matrix eqtls are also Josephs 2015 eqtls?
+nrow(oldmer) ##number of matrix cis eqtls with matches
+```
+
+```
+## [1] 3380
+```
+
+```r
+nrow(dplyr::filter(oldmer, p < 0.05))
+```
+
+```
+## [1] 3300
+```
+
+```r
+nrow(dplyr::filter(oldmer, p <  8.2e-4)) ##cutoff from paper
+```
+
+```
+## [1] 2636
+```
+
+```r
+aseqtls = read.table('data/eqtl.ase.out.all', header=T, stringsAsFactors = F)
+aseqtls$rs = sapply(1:nrow (aseqtls), function(x){
+  paste('scaffold_',substr(aseqtls$scaf[x], 5, 100),':',aseqtls$locus[x], sep="")
+  })
+
+asemer = dplyr::left_join(ciseqtls, aseqtls, by="rs") %>% dplyr::filter(pac == gene)
+
+##how many are cis eQTLs (using ASE measure)
+nrow(asemer)
+```
+
+```
+## [1] 2374
+```
+
+```r
+nrow(dplyr::filter(asemer, p.ase < 0.05))
+```
+
+```
+## [1] 1372
+```
+
+```r
+nrow(dplyr::filter(asemer, ase_hom < ase_het))
+```
+
+```
+## [1] 1996
+```

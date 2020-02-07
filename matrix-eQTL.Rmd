@@ -14,7 +14,7 @@ setwd('~/Documents/capsella-eqtl/')
 library(MatrixEQTL)
 ```
 
-##Get the batch-corrected expression data together for mapping
+## Get the batch-corrected expression data together for mapping (batch-correction was done in *wgcna.md*)
 ```{r, eval=F}
 load('data/wgcna-files/combatOutput.rda')
 
@@ -480,5 +480,10 @@ aseqtls$rs = sapply(1:nrow (aseqtls), function(x){
   })
 
 asemer = dplyr::left_join(ciseqtls, aseqtls, by="rs") %>% dplyr::filter(pac == gene)
+
+##how many are cis eQTLs (using ASE measure)
+nrow(asemer)
+nrow(dplyr::filter(asemer, p.ase < 0.05))
+nrow(dplyr::filter(asemer, ase_hom < ase_het))
 
 ```
