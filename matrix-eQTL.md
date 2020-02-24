@@ -119,6 +119,9 @@ meCovar$all$ntests
 ```
 
 ```r
+##write out a table
+write.table(meCovar$all$eqtls, file = "data/matrixeqtl-files/eqtl-output.txt", row.names=F, col.names=T, quote=F)
+
 eqtls = dplyr::filter(meCovar$all$eqtls, FDR < 0.1) ##select significant eQTLs
 
 geneloc = read.table('data/matrixeqtl-files/genelocation.matrixeqtl', header=T, stringsAsFactors = F)

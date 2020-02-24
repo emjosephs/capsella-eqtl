@@ -15,14 +15,11 @@ library('sva')
 ```
 
 ### Adjusted expression data for batch effect (collection timing)
-```{r}
 
-
-
-
+```{r, eval=T}
 myexp = read.table('data/all.med.min5', header=T)
-myexp0 = as.data.frame(t(myexp[,-1]))
-names(myexp0) = myexp$pac
+myexp0 = as.data.frame(t(myexp[,-1]))[-18806] ##also removing the "not_aligned"
+names(myexp0) = myexp$pac[-18806]
 myexp0$RNA = sapply(row.names(myexp0), function(x){substr(x,2,1000)}) ##add in a column with the RNA name
 myexp0$RNA[49] <- '157all' #slightly mismatched names
 myexp0$RNA[53] <- '161A'
@@ -124,12 +121,6 @@ write.csv(conScaled_EM, file = "../data/wgcna-files/conScaled_EM.csv")
 
 ```
 
-
-```{bash, eval=F, echo=F}
-rsync -ave ssh josep993@rsync.hpcc.msu.edu:trans-eQTL/data/wgcna-files/* data/wgcna-files/
-
-
-```
 
 ###Looking at the modules
 ```{r}
