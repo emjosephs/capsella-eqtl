@@ -222,7 +222,6 @@ hist(abs(transeqtls$beta), xlim = c(0,3), col = "darkgray", border="white", brea
 
 ```
 
-
 ### Compare minor allele frequencies of cis and trans eQTLs
 ```{r}
 finalset$rs = as.character(finalset$snps)
@@ -283,6 +282,7 @@ save('finalaf', file = "data/allbyall.rda")
 
 ```
 
+
 ### Are allele frequencies different within large effect eQTL only?
 ```{r}
 summary(abs(finalaf$beta))
@@ -311,7 +311,7 @@ table1 = read.table('Table1', header=T, stringsAsFactors=F)
 table1$scaf = c(7,8,4,4)
 table1$pos = sapply(table1$loc, function(x){strsplit(x, split=":")[[1]][2]})
 
-#postscript("figures/eqtls-pcs.eps",height=9,width=9,paper="special",horizontal=FALSE,colormodel="cymk")
+postscript("figures/Figure1.eps",height=7,width=7,paper="special",horizontal=FALSE,colormodel="cymk")
 par(mfrow=c(8,8), mar=c(0,0,0,0))
 layout(matrix(c(1,2:9,1,10:17,1,18:25,1,26:33,1,34:41,1,42:49,1,50:57,1,58:65, rep(66,9)), 9, 9, byrow = TRUE))
 plot.new()
@@ -338,6 +338,7 @@ if(i==1){mtext(j, side=1, cex=1.5, line=1)} ## if at chrom 1 for genes
 }
 plot.new()
 text(0.5,0.25, "SNP location", cex=2.5)
+dev.off()
 ```
 
 
@@ -387,6 +388,21 @@ points(c(1,2), c(mean(onegene$af, na.rm=T), mean(moregenes$af, na.rm=T)), cex=3,
 
 
 ```
+
+
+
+```{r, eval=F, echo=F}
+
+postscript("figures/Figure2.eps",height=6,width=6,paper="special",horizontal=FALSE,colormodel="cymk")
+par(mfrow=c(2,1))
+hist(cisunique$af, xlim = c(0,0.5), col = "darkgray", border="white", breaks=seq(0,1,.025), main="", xlab = "MAF of cis eQTLs", freq=T, ylab = "Number of eQTLs")
+mtext('A', side=3, adj=-0.15, cex=1.5, padj=0.1)
+hist(transunique$af, xlim = c(0,0.5), col = "darkgray", border="white", breaks = seq(0,1,0.025), main="", xlab ="MAF of trans eQTLs", freq=T, ylab = "number of eQTLs")
+mtext('B', side=3, adj=-0.15, cex=1.5, padj = 0.1)
+dev.off()
+
+```
+
 
 
 ### How many of the matrix eQTLs overlap with eQTLs from 2015 paper?

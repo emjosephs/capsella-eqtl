@@ -22,8 +22,6 @@ plink --noweb --file ../data/gemma/tags146 --make-bed --out ../data/gemma/tags14
 ```
 
 
-
-
 Make the fam file for gemma:
 
 ```r
@@ -73,7 +71,7 @@ write.table(sigresults, file = args[2], row.names=F, quote=F)
 
 
 
-Look at the results
+### Look at the results
 
 ```r
 allhitslist = sapply(1:16, function(i){
@@ -89,20 +87,18 @@ sighits
 ```
 
 ```
-##   chr                  rs       ps n_miss allele1 allele0    af   logl_H1
-## 1   7 scaffold_7:17305936 17305936      0       A       G 0.093 -185.0856
-## 2   8 scaffold_8:12634406 12634406      0       C       T 0.317 -182.4722
-## 3   4 scaffold_4:12621988 12621988      0       C       T 0.066 -183.9238
-## 4   4 scaffold_4:12623220 12623220      0       A       T 0.052 -182.8667
-##   l_mle        p_lrt        fdr module
-## 1 1e+05 1.025370e-07 0.09574403      9
-## 2 1e+05 6.937162e-09 0.01295516      9
-## 3 1e+05 2.858041e-08 0.02668699     16
-## 4 1e+05 9.623431e-09 0.01797178     16
+##   chr                  rs       ps n_miss allele1 allele0    af   logl_H1 l_mle
+## 1   7 scaffold_7:17305936 17305936      0       A       G 0.093 -185.0856 1e+05
+## 2   8 scaffold_8:12634406 12634406      0       C       T 0.317 -182.4722 1e+05
+## 3   4 scaffold_4:12621988 12621988      0       C       T 0.066 -183.9238 1e+05
+## 4   4 scaffold_4:12623220 12623220      0       A       T 0.052 -182.8667 1e+05
+##          p_lrt        fdr module
+## 1 1.025370e-07 0.09574403      9
+## 2 6.937162e-09 0.01295516      9
+## 3 2.858041e-08 0.02668699     16
+## 4 9.623431e-09 0.01797178     16
 ```
 
-
-Where are the sighnificant hits? Make manhattan plots.
 
 
 First need to pull out the regions around hits from the gemma output files
@@ -152,15 +148,19 @@ plotsnp <- function(y){
   
   #   sameScaf <- mods[mods$V1 == paste("scaffold_",as.character(x[[2]]),sep=""),]
   if (y==3){points(sighits$ps[4], -log10(sighits$p_lrt[4]), pch=21, col = 'black',bg = moduleIndex[x$module], cex=2, lwd=2)}
-  mtext(abc[y], side=3, adj=-0.05, cex=1.3)
+  mtext(abc[y], side=3, adj=-0.08, cex=1.3)
   
   }
 
-par(mfrow=c(3,1), mar=c(4,4,2,1))
+par(mfrow=c(3,1), mar=c(6,6,3,3))
 test = sapply(1:3, plotsnp)
 ```
 
 ![](coexpression-eqtls_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+
+
+
+
 
 
 Are any of them also in the all-by-all analysis?
@@ -183,8 +183,8 @@ merge2 = dplyr::left_join(myoverl[[2]], modulelocs, by = c('gene'='pac')) ##look
 ```
 
 ```
-## Warning: Column `gene`/`pac` joining factor and character vector, coercing
-## into character vector
+## Warning: Column `gene`/`pac` joining factor and character vector, coercing into
+## character vector
 ```
 
 ```r
@@ -250,8 +250,8 @@ merge3 = dplyr::left_join(myoverl[[3]], modulelocs, by = c('gene'='pac')) ##look
 ```
 
 ```
-## Warning: Column `gene`/`pac` joining factor and character vector, coercing
-## into character vector
+## Warning: Column `gene`/`pac` joining factor and character vector, coercing into
+## character vector
 ```
 
 ```r
@@ -284,8 +284,8 @@ merge4 = dplyr::left_join(myoverl[[4]], modulelocs, by = c('gene'='pac')) ##look
 ```
 
 ```
-## Warning: Column `gene`/`pac` joining factor and character vector, coercing
-## into character vector
+## Warning: Column `gene`/`pac` joining factor and character vector, coercing into
+## character vector
 ```
 
 ```r
@@ -505,16 +505,5 @@ eqtlGene
 ## 1 ID=PAC:20912595;Name=Carubv10025970m;pacid=20912595;Parent=Carubv10025970m.g;
 ```
 
-PTHR10579
-PANTHER
-CALCIUM-ACTIVATED CHLORIDE CHANNEL REGULATOR
-PTHR10579:SF59
-PANTHER
-C3H4 TYPE ZINC FINGER PROTEIN-RELATED
-
-	
-AT5G65683.1
-
-Title: The WAVY GROWTH 3 E3 ligase family controls the gravitropic response in Arabidopsis roots
 
 

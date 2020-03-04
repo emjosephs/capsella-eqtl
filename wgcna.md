@@ -11,30 +11,45 @@ output:
 
 ### Adjusted expression data for batch effect (collection timing)
 
+
 ```r
 myexp = read.table('data/all.med.min5', header=T)
-myexp0 = as.data.frame(t(myexp[,-1]))
-names(myexp0) = myexp$pac
+myexp0 = as.data.frame(t(myexp[,-1]))[-18806] ##also removing the "not_aligned"
+names(myexp0) = myexp$pac[-18806]
 myexp0$RNA = sapply(row.names(myexp0), function(x){substr(x,2,1000)}) ##add in a column with the RNA name
 myexp0$RNA[49] <- '157all' #slightly mismatched names
 myexp0$RNA[53] <- '161A'
 
 
 ## batch effects
-coltiming = read.table('data/coltiming', stringsAsFactors = F, header=T)
-mymer = dplyr::inner_join(coltiming, myexp0, by="RNA")
+#coltiming = read.table('data/coltiming', stringsAsFactors = F, header=T)
+coltiming = read.table('data/coltiming2.txt', stringsAsFactors = F, header=T)
+coltiming$ID = as.character(coltiming$ID)
+myexp0$ID = sapply(row.names(myexp0), function(x){substr(x,2,nchar(x)-1)}) ##add in a column with the RNA name
+
+#mymer = dplyr::inner_join(coltiming, myexp0, by="RNA")
+mymer = dplyr::inner_join(coltiming, myexp0, by="ID")
+
+##get the right IDs
+myID = read.table('data/id-list', header=T, stringsAsFactors = F)
+myID$ID = as.character(myID$DNA_short.name)
+mymer1 = dplyr::inner_join(myID, mymer, by ='ID')
 
 ## just the 146 individuals
 my146 = read.table('data/146_DNA_names_forplink', header=F, stringsAsFactors = F)
-mymer2 = dplyr::inner_join(my146, mymer, by = c('V2'='DNA_vcfname'))
+mymer2 = dplyr::inner_join(my146, mymer1, by = c('V2'='DNA_vcfname'))
 
-write.table(mymer2$V2, file="data/wgcna-files/mycb-names")
+##remove the one that's missing time info
+mymer2 = mymer2[-141,]
+
+#write.table(mymer2$V2, file="data/wgcna-files/mycb-names")
 
 # adjust for batch effects
 #mycb = ComBat(dat = t(mymer2[,-c(1:5)]), batch = mymer2$timeindex)
 
 #save(mycb, file = "data/wgcna-files/combatOutput.rda")
 ```
+
 
 ### Ran WGCNA on HPCC. Code is below:
 
@@ -108,8 +123,6 @@ write.csv(conScaled_EM, file = "../data/wgcna-files/conScaled_EM.csv")
 ```
 
 
-
-
 ###Looking at the modules
 
 ```r
@@ -167,7 +180,7 @@ plotDendroAndColors(geneTree, moduleColors, "Merged modules",
                      main = "Gene dendrogram and module colors")
 ```
 
-![](wgcna_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+![](wgcna_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
 
 ```r
 ##histograms of the distributions
@@ -182,7 +195,7 @@ for (i in seq(16)) {
   }
 ```
 
-![](wgcna_files/figure-html/unnamed-chunk-4-2.png)<!-- -->
+![](wgcna_files/figure-html/unnamed-chunk-3-2.png)<!-- -->
 
 ```r
 #dev.off()
@@ -197,7 +210,7 @@ axis(2, las=2, cex.axis=1.5)
 axis(1, at = test, las=2, labels = names(moduleCounts))
 ```
 
-![](wgcna_files/figure-html/unnamed-chunk-4-3.png)<!-- -->
+![](wgcna_files/figure-html/unnamed-chunk-3-3.png)<!-- -->
 
 ```r
 moduleCounts
@@ -220,10 +233,11 @@ moduleCounts
 qn <- function(x){qqnorm(x, plot.it=FALSE)$x}
 nEigens = data.frame(apply(MEs, 2,qn))
 nEigens$id = mymer2$V2
+nEigens$DNA_short.name = as.character(mymer2$DNA_short.name)
 
 
 ##Correlated with collection timing?
-tmer = dplyr::inner_join(nEigens, coltiming, by = c('id' = 'DNA_vcfname'))
+tmer = dplyr::inner_join(nEigens, coltiming, by = c('DNA_short.name'="ID"))
 par(mfrow=c(4,4), mar = c(5,3,1,1))
 for (i in seq(16)) {
    plot(tmer$timeindex,tmer[,i], main="", ylab = "", xlab = "timing", bg = cols[i], pch = 21,yaxt="n", xaxt = "n", bty="n")
@@ -235,7 +249,7 @@ for (i in seq(16)) {
   }
 ```
 
-![](wgcna_files/figure-html/unnamed-chunk-4-4.png)<!-- -->
+![](wgcna_files/figure-html/unnamed-chunk-3-4.png)<!-- -->
 
 ```r
 sapply(1:16, function(x){
@@ -256,17 +270,17 @@ phenos = read.table('data/phenotypes_NA.txt', header=T, stringsAsFactors = F)
 pmer = dplyr::left_join(tmer, phenos, by = c('id'='IID'))
 
 ##bolting
-par(mfrow=c(4,4), mar = c(5,3,1,1))
+par(mfrow=c(4,4), mar = c(4,4,1,1))
 for (i in seq(16)) {
-   plot(pmer[,i], pmer$bolt, main="", ylab = "bolt", xlab = "module expression", bg = cols[i], pch = 21,yaxt="n", xaxt = "n", bty="n")
+   plot(pmer[,i], pmer$bolt, main="", ylab = "days to bolt", xlab = paste(cols[i],"expression"), bg = cols[i], pch = 21,yaxt="n", xaxt = "n", bty="n", ylim = c(30,75))
   myl = lm(pmer$bolt ~ pmer[,i])
-  if(summary(myl)$coefficients[2,4]<0.05/16){abline(myl)}
+  if(summary(myl)$coefficients[2,4]<0.05/16){abline(myl, lwd=2)}
     axis(1)
   axis(2)
   }
 ```
 
-![](wgcna_files/figure-html/unnamed-chunk-4-5.png)<!-- -->
+![](wgcna_files/figure-html/unnamed-chunk-3-5.png)<!-- -->
 
 ```r
 par(mfrow=c(4,4), mar = c(5,3,1,1))
@@ -279,7 +293,7 @@ for (i in seq(16)) {
 }
 ```
 
-![](wgcna_files/figure-html/unnamed-chunk-4-6.png)<!-- -->
+![](wgcna_files/figure-html/unnamed-chunk-3-6.png)<!-- -->
 
 
 
