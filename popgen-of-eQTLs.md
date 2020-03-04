@@ -116,6 +116,8 @@ mtext(abc[i], side=3, adj=-0.07, cex=1.3, line=1)
 
 ![](popgen-of-eQTLs_files/figure-html/unnamed-chunk-2-2.png)<!-- -->
 
+
+
 ### Match up SweeD results and eQTLs
 
 
@@ -140,8 +142,32 @@ axis(2, las=2, cex.axis=1.5, at = c(0:5))
   })
 ```
 
-![](popgen-of-eQTLs_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+![](popgen-of-eQTLs_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
 
+
+
+```r
+postscript("figures/FigureS7.eps",height=7,width=7,paper="special",horizontal=FALSE,colormodel="cymk")
+par(mfrow=c(3,1), mar = c(5,7,3,1))
+test = sapply(c(3,4,2), function(x){
+  myhit = myhits[x,]
+  myscaf = dplyr::filter(sweed, scaf == myhit$scaf)
+  mypos = myhit$pos
+  plot(myscaf$Position, myscaf$Likelihood.focal, xlab = 'kB', ylab = "LR", bty="n", xlim = c(mypos - 5e3, mypos+5e3), ylim = c(0,5), xaxt="n", yaxt="n", cex=1.5, cex.lab = 1.5)
+    abline(v = mypos, col = "black", lwd=2, lty=2)
+    axis(1, at=seq(mypos-1e4,mypos+1e4,1000), labels = seq(-1e4,1e4,by=1000)/1000, cex.axis=1.5, padj=1)
+axis(2, las=2, cex.axis=1.5, at = c(0:5))
+    if(x == 2){abline(v = myhits[1,]$pos, col = "black", lwd=2, lty=2)}
+    abline(h = sweed.975, col="darkgray", lwd=2, lty=2)
+  mtext(abc[x], side=3, adj=-0.07, cex=1.3, line=1)
+  })
+dev.off()
+```
+
+```
+## png 
+##   2
+```
 
 ### Look at pop gen signatures of selection around all-by-all sites
 
