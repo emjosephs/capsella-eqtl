@@ -187,20 +187,19 @@ plotDendroAndColors(geneTree, moduleColors, "Merged modules",
 cols = as.vector(sapply(names(MEs), function(x) substr(x, 3, 100)))
 #postscript("suppfig_module_dists.eps",height=11,width=8,paper="special",horizontal=FALSE,colormodel="cymk")
 
-par(mfrow=c(4,4), mar = c(5,3,1,1))
+distfig = function(x){par(mfrow=c(4,4), mar = c(5,3,1,1))
 for (i in seq(16)) {
    hist(MEs[,i], main="", ylab = "", xlab = paste(cols[i]," expression", sep=""), col = cols[i], border= "black", breaks=15, yaxt="n", xaxt = "n")
   axis(1)
   axis(2)
-  }
+  }}
+
+distfig()
 ```
 
 ![](wgcna_files/figure-html/unnamed-chunk-3-2.png)<!-- -->
 
 ```r
-#dev.off()
-
-
 ##number of genes per module
 moduledf = data.frame(pac = myexp$pac, module = moduleColors, stringsAsFactors = F)
 par(mfrow=c(1,1), mar=c(6,6,3,3))
@@ -238,15 +237,17 @@ nEigens$DNA_short.name = as.character(mymer2$DNA_short.name)
 
 ##Correlated with collection timing?
 tmer = dplyr::inner_join(nEigens, coltiming, by = c('DNA_short.name'="ID"))
-par(mfrow=c(4,4), mar = c(5,3,1,1))
+timefig <- function(x){
+  par(mfrow=c(4,4), mar = c(5,5,1,1))
 for (i in seq(16)) {
-   plot(tmer$timeindex,tmer[,i], main="", ylab = "", xlab = "timing", bg = cols[i], pch = 21,yaxt="n", xaxt = "n", bty="n")
+   plot(tmer$timeindex,tmer[,i], main="", ylab = paste(cols[i], 'expression'), xlab = "timing", bg = cols[i], pch = 21,yaxt="n", xaxt = "n", bty="n")
   myl = lm(tmer[,i] ~ tmer$timeindex)
     if(summary(myl)$coefficients[2,4]<0.05/16){abline(myl)}
     axis(1)
   axis(2)
-  
-  }
+}}
+
+timefig()
 ```
 
 ![](wgcna_files/figure-html/unnamed-chunk-3-4.png)<!-- -->
@@ -294,6 +295,9 @@ for (i in seq(16)) {
 ```
 
 ![](wgcna_files/figure-html/unnamed-chunk-3-6.png)<!-- -->
+
+
+
 
 
 

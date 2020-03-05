@@ -147,22 +147,27 @@ plotDendroAndColors(geneTree, moduleColors, "Merged modules",
 cols = as.vector(sapply(names(MEs), function(x) substr(x, 3, 100)))
 #postscript("suppfig_module_dists.eps",height=11,width=8,paper="special",horizontal=FALSE,colormodel="cymk")
 
-par(mfrow=c(4,4), mar = c(5,3,1,1))
+distfig = function(x){par(mfrow=c(4,4), mar = c(5,3,1,1))
 for (i in seq(16)) {
    hist(MEs[,i], main="", ylab = "", xlab = paste(cols[i]," expression", sep=""), col = cols[i], border= "black", breaks=15, yaxt="n", xaxt = "n")
   axis(1)
   axis(2)
-  }
-#dev.off()
+  }}
+
+distfig()
+
 
 
 ##number of genes per module
 moduledf = data.frame(pac = myexp$pac, module = moduleColors, stringsAsFactors = F)
-par(mfrow=c(1,1), mar=c(6,6,3,3))
+
+modulefig <- function(x){par(mfrow=c(1,1), mar=c(8,6,3,3))
 moduleCounts = sort(table(moduledf$module))
 test = barplot(moduleCounts, col = names(moduleCounts), names.arg=NULL, xaxt="n", yaxt = "n")
 axis(2, las=2, cex.axis=1.5)
-axis(1, at = test, las=2, labels = names(moduleCounts))
+axis(1, at = test, las=2, lab = names(moduleCounts))
+}
+modulefig()
 
 moduleCounts
 
@@ -175,15 +180,18 @@ nEigens$DNA_short.name = as.character(mymer2$DNA_short.name)
 
 ##Correlated with collection timing?
 tmer = dplyr::inner_join(nEigens, coltiming, by = c('DNA_short.name'="ID"))
-par(mfrow=c(4,4), mar = c(5,3,1,1))
+timefig <- function(x){
+  par(mfrow=c(4,4), mar = c(5,5,1,1))
 for (i in seq(16)) {
-   plot(tmer$timeindex,tmer[,i], main="", ylab = "", xlab = "timing", bg = cols[i], pch = 21,yaxt="n", xaxt = "n", bty="n")
+   plot(tmer$timeindex,tmer[,i], main="", ylab = paste(cols[i], 'expression'), xlab = "timing", bg = cols[i], pch = 21,yaxt="n", xaxt = "n", bty="n")
   myl = lm(tmer[,i] ~ tmer$timeindex)
     if(summary(myl)$coefficients[2,4]<0.05/16){abline(myl)}
     axis(1)
   axis(2)
-  
-  }
+}}
+
+timefig()
+
 
 sapply(1:16, function(x){
   myl = lm(tmer[,x] ~ tmer$timeindex)
@@ -215,6 +223,21 @@ for (i in seq(16)) {
   axis(2)
 }
 
+```
+
+
+```{r, eval=F, echo=F}
+postscript("figures/FigureS2.eps",height=8,width=8,paper="special",horizontal=FALSE,colormodel="cymk")
+timefig()
+dev.off()
+
+postscript("figures/FigureS3.eps",height=8,width=8,paper="special",horizontal=FALSE,colormodel="cymk")
+distfig()
+dev.off()
+
+postscript("figures/FigureS1.eps",height=8,width=8,paper="special",horizontal=FALSE,colormodel="cymk")
+modulefig()
+dev.off()
 ```
 
 ```{r, eval=F, echo=F}
