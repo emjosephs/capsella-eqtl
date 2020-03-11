@@ -408,7 +408,7 @@ dev.off()
 ### How many of the matrix eQTLs overlap with eQTLs from 2015 paper?
 
 ```{r}
-oldeqtls = read.table('data/eqtl.kw.nonas.all', header=T, stringsAsFactors = F)
+oldeqtls = read.table('data/eqtl.kw.nonas.05', header=T, stringsAsFactors = F)
 oldeqtls$rs = sapply(1:nrow (oldeqtls), function(x){
   paste('scaffold_',substr(oldeqtls$scaf[x], 5, 100),':',oldeqtls$locus[x], sep="")
   })
@@ -421,16 +421,24 @@ plot(-log10(oldmer$p), -log10(oldmer$pvalue), bty="n", xlab = "Josephs 2015 -log
 
 ##how many of the matrix eqtls are also Josephs 2015 eqtls?
 nrow(oldmer) ##number of matrix cis eqtls with matches
-nrow(dplyr::filter(oldmer, p < 0.05))
 nrow(dplyr::filter(oldmer, p <  8.2e-4)) ##cutoff from paper
 
 
+##what is the site freq spectrum of the ones that overlap?
+hist(oldmer$af, col = "gray", border="white", main = "", xlab = "maf of cis eqtls in both studies")
 
-aseqtls = read.table('data/eqtl.ase.out.all', header=T, stringsAsFactors = F)
-aseqtls$rs = sapply(1:nrow (aseqtls), function(x){
-  paste('scaffold_',substr(aseqtls$scaf[x], 5, 100),':',aseqtls$locus[x], sep="")
-  })
+hist(oldeqtls$fold, col = "gray", border="white", main = "", xlab = "maf of cis eqtls in 2015")
 
-asemer = dplyr::left_join(ciseqtls, aseqtls, by="rs") %>% dplyr::filter(pac == gene)
+
+##are afs correlated in two samples?
+plot(oldmer$af, oldmer$fold, xlab = "2015 maf", ylab = "2020 maf", bty="n")
+
+
+#aseqtls = read.table('data/eqtl.ase.out.all', header=T, stringsAsFactors = F)
+#aseqtls$rs = sapply(1:nrow (aseqtls), function(x){
+#  paste('scaffold_',substr(aseqtls$scaf[x], 5, 100),':',aseqtls$locus[x], sep="")
+#  })
+
+#asemer = dplyr::left_join(ciseqtls, aseqtls, by="rs") %>% dplyr::filter(pac == gene)
 
 ```

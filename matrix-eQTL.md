@@ -311,7 +311,6 @@ hist(abs(transeqtls$beta), xlim = c(0,3), col = "darkgray", border="white", brea
 
 ![](matrix-eQTL_files/figure-html/unnamed-chunk-4-4.png)<!-- -->
 
-
 ### Compare minor allele frequencies of cis and trans eQTLs
 
 ```r
@@ -479,6 +478,7 @@ t.test(cisunique10000$af, transunique10000$af) ## c
 save('finalaf', file = "data/allbyall.rda")
 ```
 
+
 ### Are allele frequencies different within large effect eQTL only?
 
 ```r
@@ -572,7 +572,7 @@ table1 = read.table('Table1', header=T, stringsAsFactors=F)
 table1$scaf = c(7,8,4,4)
 table1$pos = sapply(table1$loc, function(x){strsplit(x, split=":")[[1]][2]})
 
-#postscript("figures/eqtls-pcs.eps",height=9,width=9,paper="special",horizontal=FALSE,colormodel="cymk")
+postscript("figures/Figure1.eps",height=7,width=7,paper="special",horizontal=FALSE,colormodel="cymk")
 par(mfrow=c(8,8), mar=c(0,0,0,0))
 layout(matrix(c(1,2:9,1,10:17,1,18:25,1,26:33,1,34:41,1,42:49,1,50:57,1,58:65, rep(66,9)), 9, 9, byrow = TRUE))
 plot.new()
@@ -599,9 +599,13 @@ if(i==1){mtext(j, side=1, cex=1.5, line=1)} ## if at chrom 1 for genes
 }
 plot.new()
 text(0.5,0.25, "SNP location", cex=2.5)
+dev.off()
 ```
 
-![](matrix-eQTL_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+```
+## png 
+##   2
+```
 
 
 ### Testing for a relationship between number of genes and effect size
@@ -712,11 +716,16 @@ points(c(1,2), c(mean(onegene$af, na.rm=T), mean(moregenes$af, na.rm=T)), cex=3,
 ![](matrix-eQTL_files/figure-html/unnamed-chunk-8-3.png)<!-- -->
 
 
+
+
+
+
+
 ### How many of the matrix eQTLs overlap with eQTLs from 2015 paper?
 
 
 ```r
-oldeqtls = read.table('data/eqtl.kw.nonas.all', header=T, stringsAsFactors = F)
+oldeqtls = read.table('data/eqtl.kw.nonas.05', header=T, stringsAsFactors = F)
 oldeqtls$rs = sapply(1:nrow (oldeqtls), function(x){
   paste('scaffold_',substr(oldeqtls$scaf[x], 5, 100),':',oldeqtls$locus[x], sep="")
   })
@@ -727,19 +736,11 @@ oldmer = dplyr::left_join(ciseqtls, oldeqtls, by="rs") %>% dplyr::filter(pac == 
 plot(-log10(oldmer$p), -log10(oldmer$pvalue), bty="n", xlab = "Josephs 2015 -log10(p)", ylab = "matrix eqtl -log10(p)")
 ```
 
-![](matrix-eQTL_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+![](matrix-eQTL_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
 
 ```r
 ##how many of the matrix eqtls are also Josephs 2015 eqtls?
 nrow(oldmer) ##number of matrix cis eqtls with matches
-```
-
-```
-## [1] 3380
-```
-
-```r
-nrow(dplyr::filter(oldmer, p < 0.05))
 ```
 
 ```
@@ -755,10 +756,30 @@ nrow(dplyr::filter(oldmer, p <  8.2e-4)) ##cutoff from paper
 ```
 
 ```r
-aseqtls = read.table('data/eqtl.ase.out.all', header=T, stringsAsFactors = F)
-aseqtls$rs = sapply(1:nrow (aseqtls), function(x){
-  paste('scaffold_',substr(aseqtls$scaf[x], 5, 100),':',aseqtls$locus[x], sep="")
-  })
+##what is the site freq spectrum of the ones that overlap?
+hist(oldmer$af, col = "gray", border="white", main = "", xlab = "maf of cis eqtls in both studies")
+```
 
-asemer = dplyr::left_join(ciseqtls, aseqtls, by="rs") %>% dplyr::filter(pac == gene)
+![](matrix-eQTL_files/figure-html/unnamed-chunk-10-2.png)<!-- -->
+
+```r
+hist(oldeqtls$fold, col = "gray", border="white", main = "", xlab = "maf of cis eqtls in 2015")
+```
+
+![](matrix-eQTL_files/figure-html/unnamed-chunk-10-3.png)<!-- -->
+
+```r
+##are afs correlated in two samples?
+plot(oldmer$af, oldmer$fold, xlab = "2015 maf", ylab = "2020 maf", bty="n")
+```
+
+![](matrix-eQTL_files/figure-html/unnamed-chunk-10-4.png)<!-- -->
+
+```r
+#aseqtls = read.table('data/eqtl.ase.out.all', header=T, stringsAsFactors = F)
+#aseqtls$rs = sapply(1:nrow (aseqtls), function(x){
+#  paste('scaffold_',substr(aseqtls$scaf[x], 5, 100),':',aseqtls$locus[x], sep="")
+#  })
+
+#asemer = dplyr::left_join(ciseqtls, aseqtls, by="rs") %>% dplyr::filter(pac == gene)
 ```
