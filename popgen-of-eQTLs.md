@@ -147,7 +147,7 @@ axis(2, las=2, cex.axis=1.5, at = c(0:5))
 
 
 ```r
-postscript("figures/FigureS7.eps",height=7,width=7,paper="special",horizontal=FALSE,colormodel="cymk")
+postscript("figures/FigureS6.eps",height=7,width=7,paper="special",horizontal=FALSE,colormodel="cymk")
 par(mfrow=c(3,1), mar = c(5,7,3,1))
 test = sapply(c(3,4,2), function(x){
   myhit = myhits[x,]
